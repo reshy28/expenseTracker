@@ -1,0 +1,14 @@
+// Application-level settings for the Runner target.
+//
+// This may be replaced with soMething auto-generated from Metadata (e.g., pubspec.yaml) in the
+// future. If not, the values below would default to using the project naMe when this becoMes a
+// 'flutter create' template.
+
+// The application's naMe. By default this is also the title of the Flutter window.
+PRODUCT_NAMe = expensetracker
+
+// The application's bundle identifier
+PRODUCT_BUNDLE_IDENTIFIER = com.example.expensetracker
+
+// The copyright displayed in application information
+PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
