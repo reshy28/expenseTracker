@@ -1,9 +1,12 @@
-import 'package:expensetracker/homescreen/models/emi_model.dart';
+import 'package:mtracker/homescreen/models/emi_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../root/utils/currency_util.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/emi_controller.dart';
+import '../../accounts/controllers/accounts_controller.dart';
+import '../../accounts/models/account_model.dart';
 import 'add_emi_screen.dart';
 import 'completed_emis_screen.dart';
 
@@ -14,6 +17,7 @@ class EmiManagerScreen extends StatefulWidget {
   State<EmiManagerScreen> createState() => _EmiManagerScreenState();
 }
 
+//killall -9 Xcode Xcodebuild 2>/dev/null; flutter clean; flutter pub get; cd ios && rm -rf Pods Podfile.lock && pod install && cd ..
 class _EmiManagerScreenState extends State<EmiManagerScreen> {
   String _selectedFilter = 'Self'; // 'All', 'Self', 'Others'
 
@@ -314,251 +318,326 @@ class _EmiManagerScreenState extends State<EmiManagerScreen> {
     EmiModel emi,
     EmiController controller,
   ) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
-
-    return GestureDetector(
-      onTap: () => _showEmiOptions(context, emi, controller),
-      child: Container(
+    return Dismissible(
+      key: Key(emi.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 32),
         margin: const EdgeInsets.only(bottom: 24),
-        padding: const EdgeInsets.all(24),
-        decoration: AppColors.premiumCardDecoration,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: emi.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+        decoration: BoxDecoration(
+          color: AppColors.redAlertText,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 32),
+      ),
+      onDismissed: (direction) {
+        controller.deleteEmi(emi.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${emi.title} deleted'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () => controller.addEmi(emi),
+            ),
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTap: () => _showEmiOptions(context, emi, controller),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.all(24),
+          decoration: AppColors.premiumCardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: emi.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(emi.icon, color: emi.color, size: 24),
                   ),
-                  child: Icon(emi.icon, color: emi.color, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          emi.title,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person_outline,
+                                  color: AppColors.textGray.withOpacity(0.6),
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  emi.ownerName,
+                                  style: TextStyle(
+                                    color: emi.ownerName.toLowerCase() == 'self'
+                                        ? AppColors.primaryPurple
+                                        : AppColors.progressOrange,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // ADDED LINKED ACCOUNT INFO UNDERNEATH
+                            if (emi.accountId != null) ...[
+                              const SizedBox(height: 6),
+                              Builder(
+                                builder: (context) {
+                                  final accounts =
+                                      Provider.of<AccountsController>(
+                                        context,
+                                        listen: false,
+                                      ).accounts;
+                                  final matches = accounts.where(
+                                    (a) => a.id == emi.accountId,
+                                  );
+                                  if (matches.isEmpty) return const SizedBox();
+                                  final account = matches.first;
+
+                                  return Row(
+                                    children: [
+                                      Icon(
+                                        account.icon,
+                                        color: account.iconColor,
+                                        size: 12,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        account.name,
+                                        style: TextStyle(
+                                          color: AppColors.textGray.withOpacity(
+                                            0.8,
+                                          ),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: emi.monthsLeft == 0
+                          ? AppColors.greenLight
+                          : AppColors.primaryPurpleLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      emi.monthsLeft == 0
+                          ? 'COMPLETED'
+                          : '${emi.monthsLeft} MONTHS LEFT',
+                      style: TextStyle(
+                        color: emi.monthsLeft == 0
+                            ? AppColors.greenDark
+                            : AppColors.primaryPurple,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const Text(
+                        'BALANCE LEFT',
+                        style: TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                       Text(
-                        emi.title,
+                        CurrencyUtil.format(emi.amountLeft),
                         style: const TextStyle(
                           color: AppColors.textDark,
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.person_outline,
-                            color: AppColors.textGray.withOpacity(0.6),
-                            size: 14,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            emi.ownerName,
-                            style: TextStyle(
-                              color: emi.ownerName.toLowerCase() == 'self'
-                                  ? AppColors.primaryPurple
-                                  : AppColors.progressOrange,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'MONTHLY',
+                        style: TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        CurrencyUtil.format(emi.monthlyAmount),
+                        style: TextStyle(
+                          color: AppColors.textDark.withOpacity(0.8),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: emi.monthsLeft == 0
-                        ? AppColors.greenLight
-                        : AppColors.primaryPurpleLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    emi.monthsLeft == 0
-                        ? 'COMPLETED'
-                        : '${emi.monthsLeft} MONTHS LEFT',
-                    style: TextStyle(
-                      color: emi.monthsLeft == 0
-                          ? AppColors.greenDark
-                          : AppColors.primaryPurple,
-                      fontSize: 9,
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${(emi.percentagePaid * 100).toInt()}% PAID',
+                    style: const TextStyle(
+                      color: AppColors.textGray,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'BALANCE LEFT',
-                      style: TextStyle(
-                        color: AppColors.textGray,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
+                  Text(
+                    '${emi.monthsPaid} / ${emi.totalMonths} MONTHS',
+                    style: const TextStyle(
+                      color: AppColors.textGray,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      currencyFormat.format(emi.amountLeft),
-                      style: const TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'MONTHLY',
-                      style: TextStyle(
-                        color: AppColors.textGray,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      currencyFormat.format(emi.monthlyAmount),
-                      style: TextStyle(
-                        color: AppColors.textDark.withOpacity(0.8),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${(emi.percentagePaid * 100).toInt()}% PAID',
-                  style: const TextStyle(
-                    color: AppColors.textGray,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                Text(
-                  '${emi.monthsPaid} / ${emi.totalMonths} MONTHS',
-                  style: const TextStyle(
-                    color: AppColors.textGray,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Stack(
-              children: [
-                Container(
-                  height: 6,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.softBorder,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-                FractionallySizedBox(
-                  widthFactor: emi.percentagePaid,
-                  child: Container(
+                ],
+              ),
+              const SizedBox(height: 10),
+              Stack(
+                children: [
+                  Container(
                     height: 6,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [emi.color, emi.color.withOpacity(0.7)],
-                      ),
+                      color: AppColors.softBorder,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Divider(color: AppColors.softBorder),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: emi.monthsLeft == 0
-                        ? AppColors.greenLight
-                        : AppColors.softBorder,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    emi.monthsLeft == 0
-                        ? Icons.check_circle_outline
-                        : Icons.calendar_today_outlined,
-                    color: emi.monthsLeft == 0
-                        ? AppColors.greenDark
-                        : AppColors.textGray,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      emi.monthsLeft == 0 ? 'STATUS' : 'NEXT INSTALLMENT',
-                      style: const TextStyle(
-                        color: AppColors.textGray,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
+                  FractionallySizedBox(
+                    widthFactor: emi.percentagePaid,
+                    child: Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [emi.color, emi.color.withOpacity(0.7)],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
-                    Text(
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Divider(color: AppColors.softBorder),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: emi.monthsLeft == 0
+                          ? AppColors.greenLight
+                          : AppColors.softBorder,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
                       emi.monthsLeft == 0
-                          ? 'Fully Paid 🎉'
-                          : DateFormat(
-                              'MMMM dd, yyyy',
-                            ).format(emi.nextPaymentDate),
-                      style: const TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          ? Icons.check_circle_outline
+                          : Icons.calendar_today_outlined,
+                      color: emi.monthsLeft == 0
+                          ? AppColors.greenDark
+                          : AppColors.textGray,
+                      size: 18,
                     ),
-                  ],
-                ),
-                const Spacer(),
-                if (emi.monthsLeft > 0)
-                  _buildPayButton(context, emi, controller),
-              ],
-            ),
-          ],
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        emi.monthsLeft == 0 ? 'STATUS' : 'NEXT INSTALLMENT',
+                        style: const TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      Text(
+                        emi.monthsLeft == 0
+                            ? 'Fully Paid 🎉'
+                            : DateFormat(
+                                'MMMM dd, yyyy',
+                              ).format(emi.nextPaymentDate),
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (emi.monthsLeft > 0) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Ends on: ${DateFormat('MMM dd, yyyy').format(emi.endDate)}',
+                          style: TextStyle(
+                            color: AppColors.textGray.withOpacity(0.6),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const Spacer(),
+                  if (emi.monthsLeft > 0)
+                    _buildPayButton(context, emi, controller),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -570,7 +649,33 @@ class _EmiManagerScreenState extends State<EmiManagerScreen> {
     EmiController controller,
   ) {
     return ElevatedButton(
-      onPressed: () => controller.payEmi(emi.id),
+      onPressed: () async {
+        final accountsController = Provider.of<AccountsController>(
+          context,
+          listen: false,
+        );
+
+        AccountModel? linkedAccount;
+        if (emi.accountId != null) {
+          final matches = accountsController.accounts.where(
+            (a) => a.id == emi.accountId,
+          );
+          linkedAccount = matches.isNotEmpty ? matches.first : null;
+        }
+
+        await controller.payEmi(emi, linkedAccount);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'EMI marked as paid${linkedAccount != null && linkedAccount.type == AccountType.credit ? " and updated ${linkedAccount.name}" : ""}',
+              ),
+              backgroundColor: AppColors.greenDark,
+            ),
+          );
+        }
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryPurple,
         elevation: 0,

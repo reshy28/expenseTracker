@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/payment_methods_controller.dart';
 import '../models/payment_models.dart';
+import '../../categories/controllers/category_controller.dart';
+import '../../root/utils/currency_util.dart';
 import 'add_fixed_expense_screen.dart';
 
 class FixedExpenseListScreen extends StatelessWidget {
@@ -83,11 +85,7 @@ class FixedExpenseListScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          NumberFormat.currency(
-                            locale: 'en_IN',
-                            symbol: '₹',
-                            decimalDigits: 0,
-                          ).format(
+                          CurrencyUtil.format(
                             controller.fixedExpenses.fold(
                               0.0,
                               (sum, e) => sum + e.amount,
@@ -208,78 +206,84 @@ class FixedExpenseListScreen extends StatelessWidget {
     FixedExpenseModel expense,
     PaymentMethodsController controller,
   ) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
+    // We'll use CurrencyUtil directly
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.textLight,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.textDark.withOpacity(0.05)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: expense.backgroundColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(expense.icon, color: expense.iconColor, size: 24),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddFixedExpenseScreen(expenseToEdit: expense),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.textLight,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.textDark.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: expense.backgroundColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(expense.icon, color: expense.iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.name,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Due every ${expense.dueDay}${_getDaySuffix(expense.dueDay)}',
+                    style: TextStyle(
+                      color: AppColors.textGray.withOpacity(0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  expense.name,
+                  CurrencyUtil.format(expense.amount),
                   style: const TextStyle(
                     color: AppColors.textDark,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Due every ${expense.dueDay}${_getDaySuffix(expense.dueDay)}',
-                  style: TextStyle(
-                    color: AppColors.textGray.withOpacity(0.6),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => controller.deleteFixedExpense(expense.id),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.redAlertText,
+                    size: 20,
                   ),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                currencyFormat.format(expense.amount),
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => controller.deleteFixedExpense(expense.id),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: AppColors.redAlertText,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

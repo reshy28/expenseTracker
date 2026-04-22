@@ -1,111 +1,76 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
-import '../models/category_model.dart';
-import '../models/bill_model.dart';
+import '../../settings/models/user_model.dart';
 import '../models/transaction_model.dart';
-import '../views/app_colors.dart';
+
+import '../../root/services/firebase_service.dart';
 
 class HomeController extends ChangeNotifier {
-  final UserModel user = UserModel(
-    name: 'Alex Johnson',
-    avatarUrl: 'https://i.pravatar.cc/150?img=11',
+  final FirestoreService _firestoreService = FirestoreService();
+
+  UserModel _user = UserModel(
+    name: 'User',
+    email: '',
   );
 
-  final double budgetSpent = 42000;
-  final double budgetTotal = 60000;
+  List<TransactionModel> _transactions = [];
+  bool _isLoading = true;
 
-  final List<CategoryModel> categories = [
-    CategoryModel(
-      name: 'Food',
+  HomeController() {
+    _init();
+  }
 
-      icon: Icons.restaurant,
-      backgroundColor: AppColors.foodBg,
-      iconColor: AppColors.foodIcon,
-      id: '',
-    ),
-    CategoryModel(
-      name: 'Transport',
+  void _init() {
+    // 1. Initial sync with Firebase Auth for immediate display
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      _user = _user.copyWith(
+        name: currentUser.displayName ?? 'User',
+        email: currentUser.email ?? '',
+      );
+    }
 
-      icon: Icons.directions_car,
-      backgroundColor: AppColors.transportBg,
-      iconColor: AppColors.transportIcon,
-      id: '',
-    ),
-    CategoryModel(
-      name: 'Shopping',
+    // 2. Listen to profile/settings from the specialized Firestore subcollection
+    _firestoreService.getProfile().listen((user) {
+      if (user != null) {
+        _user = user;
+        notifyListeners();
+      } else if (currentUser != null) {
+        // Fallback to Auth data if Firestore doc doesn't exist
+        _user = _user.copyWith(
+          name: currentUser.displayName ?? 'User',
+          email: currentUser.email ?? '',
+        );
+        notifyListeners();
+      }
+    });
 
-      icon: Icons.shopping_bag,
-      backgroundColor: AppColors.shoppingBg,
-      iconColor: AppColors.shoppingIcon,
-      id: '',
-    ),
-    CategoryModel(
-      name: 'Bills',
+    // Listen to transactions
+    _firestoreService.getTransactions().listen((transactions) {
+      _transactions = transactions;
+      _isLoading = false;
+      notifyListeners();
+    });
+  }
 
-      icon: Icons.bolt,
-      backgroundColor: AppColors.billsBg,
-      iconColor: AppColors.billsIcon,
-      id: '',
-    ),
-  ];
+  UserModel get user => _user;
+  List<TransactionModel> get transactions => List.unmodifiable(_transactions);
+  bool get isLoading => _isLoading;
 
-  final List<BillModel> bills = [
-    BillModel(
-      title: 'Rent Payment',
-      amount: 15000,
-      dueDate: 'Due on Apr 20',
-      dueInDays: 'Due in 4 days',
-      icon: Icons.home,
-      backgroundColor: AppColors.rentBg,
-      iconColor: AppColors.rentIcon,
-    ),
-    BillModel(
-      title: 'Gym Membership',
-      amount: 1200,
-      dueDate: 'Due on Apr 22',
-      dueInDays: 'Due in 6 days',
-      icon: Icons.trending_up,
-      backgroundColor: AppColors.gymBg,
-      iconColor: AppColors.gymIcon,
-    ),
-    BillModel(
-      title: 'Internet Bill',
-      amount: 999,
-      dueDate: 'Due on Apr 18',
-      dueInDays: 'Due in 2 days',
-      icon: Icons.bolt,
-      backgroundColor: AppColors.internetBg,
-      iconColor: AppColors.internetIcon,
-    ),
-  ];
+  double get budgetSpent {
+    final now = DateTime.now();
+    return _transactions
+        .where((t) =>
+            t.date.month == now.month &&
+            t.date.year == now.year &&
+            t.dateSubtitle != 'EMI Installment' &&
+            t.dateSubtitle != 'Loan Initiation')
+        .fold(0.0, (sum, t) => sum + t.amount);
+  }
 
-  final List<TransactionModel> transactions = [
-    TransactionModel(
-      title: 'Starbucks Coffee',
-      dateSubtitle: 'Today, 09:45 AM',
-      date: DateTime.now(),
-      amount: 350,
-      icon: Icons.local_dining,
-      iconBackgroundColor: AppColors.foodBg,
-      iconColor: AppColors.foodIcon,
-    ),
-    TransactionModel(
-      title: 'Uber Ride',
-      dateSubtitle: 'Yesterday, 06:20 PM',
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      amount: 180,
-      icon: Icons.directions_car,
-      iconBackgroundColor: AppColors.transportBg,
-      iconColor: AppColors.transportIcon,
-    ),
-    TransactionModel(
-      title: 'Grocery Store',
-      dateSubtitle: '14 April, 02:30 PM',
-      date: DateTime(DateTime.now().year, 4, 14),
-      amount: 1200,
-      icon: Icons.shopping_basket,
-      iconBackgroundColor: AppColors.shoppingBg,
-      iconColor: AppColors.shoppingIcon,
-    ),
-  ];
+  Future<void> deleteTransaction(TransactionModel transaction) async {
+    // Note: It's better to use TransactionsController for this, 
+    // but we keep a pass-through here for Home Screen quick-delete if needed.
+    await _firestoreService.deleteTransactionAndUpdateBalance(transaction);
+  }
 }

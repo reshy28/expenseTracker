@@ -28,14 +28,14 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
-        versionNaMe = flutter.versionNaMe
+        versionName = flutter.versionName
     }
 
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByNaMe("debug")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

@@ -6,7 +6,8 @@ import '../models/payment_models.dart';
 import '../../categories/controllers/category_controller.dart';
 
 class AddFixedExpenseScreen extends StatefulWidget {
-  const AddFixedExpenseScreen({super.key});
+  final FixedExpenseModel? expenseToEdit;
+  const AddFixedExpenseScreen({super.key, this.expenseToEdit});
 
   @override
   State<AddFixedExpenseScreen> createState() => _AddFixedExpenseScreenState();
@@ -17,6 +18,24 @@ class _AddFixedExpenseScreenState extends State<AddFixedExpenseScreen> {
   final _amountController = TextEditingController();
   int _selectedDay = 1;
   String? _selectedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.expenseToEdit != null) {
+      _nameController.text = widget.expenseToEdit!.name;
+      _amountController.text = widget.expenseToEdit!.amount.toString();
+      _selectedDay = widget.expenseToEdit!.dueDay;
+      _selectedCategoryId = widget.expenseToEdit!.categoryId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +72,11 @@ class _AddFixedExpenseScreenState extends State<AddFixedExpenseScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Text(
-                    'Add Fixed Expense',
-                    style: TextStyle(
+                  Text(
+                    widget.expenseToEdit != null
+                        ? 'Edit Fixed Expense'
+                        : 'Add Fixed Expense',
+                    style: const TextStyle(
                       color: AppColors.textDark,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -286,18 +307,20 @@ class _AddFixedExpenseScreenState extends State<AddFixedExpenseScreen> {
                         _selectedCategoryId == null) {
                       return;
                     }
-
                     final selectedCategory = categories.firstWhere(
                       (c) => c.id == _selectedCategoryId,
                     );
                     final expense = FixedExpenseModel(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      id:
+                          widget.expenseToEdit?.id ??
+                          DateTime.now().millisecondsSinceEpoch.toString(),
                       name: _nameController.text,
                       amount: double.tryParse(_amountController.text) ?? 0,
                       dueDay: _selectedDay,
-                      icon: selectedCategory.icon,
+                      iconName: selectedCategory.iconName,
                       backgroundColor: selectedCategory.backgroundColor,
                       iconColor: selectedCategory.iconColor,
+                      categoryId: _selectedCategoryId,
                     );
 
                     controller.addFixedExpense(expense);
@@ -310,9 +333,11 @@ class _AddFixedExpenseScreenState extends State<AddFixedExpenseScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text(
-                    'Add Expense',
-                    style: TextStyle(
+                  child: Text(
+                    widget.expenseToEdit != null
+                        ? 'Save Changes'
+                        : 'Add Expense',
+                    style: const TextStyle(
                       color: AppColors.textLight,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

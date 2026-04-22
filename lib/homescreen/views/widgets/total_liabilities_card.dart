@@ -1,3 +1,4 @@
+import 'package:mtracker/root/utils/currency_util.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
 
@@ -60,10 +61,10 @@ class TotalLiabilitiesCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '₹${totalAmount.toInt().toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")}',
+                    CurrencyUtil.format(totalAmount),
                     style: const TextStyle(
                       color: AppColors.textLight,
-                      fontSize: 36,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

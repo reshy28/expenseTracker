@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../../homescreen/models/category_model.dart';
 import '../controllers/category_controller.dart';
+import '../../root/utils/app_icons.dart';
 
 class AddCategoryScreen extends StatefulWidget {
   final CategoryModel? category;
@@ -14,31 +15,13 @@ class AddCategoryScreen extends StatefulWidget {
 
 class _AddCategoryScreenState extends State<AddCategoryScreen> {
   late TextEditingController _nameController;
-  late IconData _selectedIcon;
+  late String _selectedIcon;
   late Map<String, Color> _selectedColors;
 
-  final List<IconData> _availableIcons = [
-    Icons.restaurant,
-    Icons.directions_car,
-    Icons.shopping_bag,
-    Icons.bolt,
-    Icons.home,
-    Icons.movie,
-    Icons.fitness_center,
-    Icons.medical_services,
-    Icons.school,
-    Icons.flight,
-    Icons.receipt_long,
-    Icons.savings,
-    Icons.pets,
-    Icons.coffee,
-    Icons.redeem,
-    Icons.construction,
-    Icons.stroller,
-    Icons.music_note,
-  ];
+  final List<String> _availableIcons = AppIcons.allNames;
 
   final List<Map<String, Color>> _colorPresets = [
+    {'bg': AppColors.primaryPurpleLight, 'icon': AppColors.primaryPurple},
     {'bg': AppColors.foodBg, 'icon': AppColors.foodIcon},
     {'bg': AppColors.transportBg, 'icon': AppColors.transportIcon},
     {'bg': AppColors.shoppingBg, 'icon': AppColors.shoppingIcon},
@@ -46,14 +29,19 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     {'bg': AppColors.rentBg, 'icon': AppColors.rentIcon},
     {'bg': AppColors.gymBg, 'icon': AppColors.gymIcon},
     {'bg': AppColors.greenLight, 'icon': AppColors.greenDark},
-    {'bg': AppColors.primaryPurpleLight, 'icon': AppColors.primaryPurple},
+    {'bg': const Color(0xFFFFE5F1), 'icon': const Color(0xFFFF2D92)}, // Pink
+    {'bg': const Color(0xFFE0FBFF), 'icon': const Color(0xFF00B4D8)}, // Cyan
+    {'bg': const Color(0xFFF1F0FF), 'icon': const Color(0xFF7209B7)}, // Deep Purple
+    {'bg': const Color(0xFFE8F5E9), 'icon': const Color(0xFF2E7D32)}, // Forest Green
+    {'bg': const Color(0xFFFFF3E0), 'icon': const Color(0xFFE65100)}, // Deep Orange
+    {'bg': const Color(0xFFF3E5F5), 'icon': const Color(0xFF8E24AA)}, // Modern Purple
   ];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.category?.name ?? '');
-    _selectedIcon = widget.category?.icon ?? Icons.restaurant;
+    _selectedIcon = widget.category?.iconName ?? AppIcons.restaurant;
 
     if (widget.category != null) {
       _selectedColors = {
@@ -162,8 +150,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                               final updatedCategory = CategoryModel(
                                 id: widget.category!.id,
                                 name: _nameController.text,
-
-                                icon: _selectedIcon,
+                                iconName: _selectedIcon,
                                 backgroundColor: _selectedColors['bg']!,
                                 iconColor: _selectedColors['icon']!,
                               );
@@ -176,15 +163,14 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                 id: DateTime.now().millisecondsSinceEpoch
                                     .toString(),
                                 name: _nameController.text,
-
-                                icon: _selectedIcon,
+                                iconName: _selectedIcon,
                                 backgroundColor: _selectedColors['bg']!,
                                 iconColor: _selectedColors['icon']!,
                               );
                               Provider.of<CategoryController>(
                                 context,
                                 listen: false,
-                              ).addCategory(newCategory);
+                              ).saveCategory(newCategory);
                             }
                             Navigator.pop(context);
                           },
@@ -276,10 +262,10 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
         ),
         itemCount: _availableIcons.length,
         itemBuilder: (context, index) {
-          final icon = _availableIcons[index];
-          final isSelected = icon == _selectedIcon;
+          final iconName = _availableIcons[index];
+          final isSelected = iconName == _selectedIcon;
           return GestureDetector(
-            onTap: () => setState(() => _selectedIcon = icon),
+            onTap: () => setState(() => _selectedIcon = iconName),
             child: Container(
               decoration: BoxDecoration(
                 color: isSelected
@@ -288,7 +274,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                icon,
+                AppIcons.get(iconName),
                 size: 20,
                 color: isSelected
                     ? AppColors.textLight

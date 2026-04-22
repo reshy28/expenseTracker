@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/accounts_controller.dart';
 import '../models/account_model.dart';
 import 'add_account_screen.dart';
+import '../../root/utils/currency_util.dart';
 
 class MyAccountsScreen extends StatelessWidget {
   const MyAccountsScreen({super.key});
@@ -82,7 +82,8 @@ class MyAccountsScreen extends StatelessWidget {
                         border: Border.all(
                           color: AppColors.primaryPurple.withOpacity(0.2),
                           width: 2,
-                          style: BorderStyle.none, // We'll use a better design below
+                          style: BorderStyle
+                              .none, // We'll use a better design below
                         ),
                       ),
                       child: Container(
@@ -137,11 +138,7 @@ class MyAccountsScreen extends StatelessWidget {
 
   Widget _buildAccountItem(BuildContext context, AccountModel account) {
     final bool isCredit = account.type == AccountType.credit;
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
+    final String formattedBalance = CurrencyUtil.format(account.balance);
 
     return GestureDetector(
       onTap: () {
@@ -196,7 +193,7 @@ class MyAccountsScreen extends StatelessWidget {
                 ),
                 if (!isCredit)
                   Text(
-                    currencyFormat.format(account.balance),
+                    formattedBalance,
                     style: const TextStyle(
                       color: AppColors.textDark,
                       fontSize: 20,
@@ -226,7 +223,7 @@ class MyAccountsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        currencyFormat.format(account.limit ?? 0),
+                        CurrencyUtil.format(account.limit ?? 0),
                         style: const TextStyle(
                           color: AppColors.textDark,
                           fontSize: 16,
@@ -249,7 +246,7 @@ class MyAccountsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        currencyFormat.format(account.balance),
+                        formattedBalance,
                         style: const TextStyle(
                           color: AppColors.redAlertText,
                           fontSize: 16,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/account_model.dart';
-import '../../homescreen/views/app_colors.dart';
 import '../../root/services/firebase_service.dart';
 
 class AccountsController extends ChangeNotifier {

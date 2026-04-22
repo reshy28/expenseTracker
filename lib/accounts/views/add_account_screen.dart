@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/accounts_controller.dart';
 import '../models/account_model.dart';
+import '../../root/utils/app_icons.dart';
 
 class AddAccountScreen extends StatefulWidget {
   final AccountModel? account;
@@ -16,6 +17,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   late TextEditingController _nameController;
   late TextEditingController _amountController;
   late TextEditingController _limitController;
+  late TextEditingController _usedAmountController;
   late AccountType _selectedType;
 
   @override
@@ -23,12 +25,37 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.account?.name ?? '');
     _amountController = TextEditingController(
-      text: widget.account?.balance.toStringAsFixed(0) ?? '0',
-    );
-    _limitController = TextEditingController(
-      text: widget.account?.limit?.toStringAsFixed(0) ?? '',
+      text:
+          widget.account?.balance.toStringAsFixed(2).replaceAll('.00', '') ??
+          '0',
     );
     _selectedType = widget.account?.type ?? AccountType.bank;
+
+    double limit = widget.account?.limit ?? 0;
+    double balance = widget.account?.balance ?? 0;
+    double used = limit > 0 ? (limit - balance) : 0;
+
+    _limitController = TextEditingController(
+      text: limit > 0 ? limit.toStringAsFixed(2).replaceAll('.00', '') : '',
+    );
+    _usedAmountController = TextEditingController(
+      text: used > 0 ? used.toStringAsFixed(2).replaceAll('.00', '') : '',
+    );
+
+    _limitController.addListener(_updateBalance);
+    _usedAmountController.addListener(_updateBalance);
+  }
+
+  void _updateBalance() {
+    if (_selectedType == AccountType.credit) {
+      final double limit =
+          double.tryParse(_limitController.text.replaceAll(',', '')) ?? 0.0;
+      final double used =
+          double.tryParse(_usedAmountController.text.replaceAll(',', '')) ??
+          0.0;
+      final double balance = limit - used;
+      _amountController.text = balance.toStringAsFixed(2);
+    }
   }
 
   @override
@@ -36,6 +63,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     _nameController.dispose();
     _amountController.dispose();
     _limitController.dispose();
+    _usedAmountController.dispose();
     super.dispose();
   }
 
@@ -105,9 +133,6 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                       const SizedBox(height: 12),
                       _buildDropdown(),
                       const SizedBox(height: 24),
-                      _buildLabel('BALANCE AMOUNT'),
-                      const SizedBox(height: 12),
-                      _buildAmountField(_amountController),
 
                       if (_selectedType == AccountType.credit) ...[
                         const SizedBox(height: 24),
@@ -115,10 +140,32 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         const SizedBox(height: 12),
                         _buildAmountField(
                           _limitController,
-                          hint: 'e.g. 1,00,000',
+                          hint: 'e.g. 1,20,000',
+                        ),
+                        const SizedBox(height: 24),
+                        _buildLabel('USED AMOUNT'),
+                        const SizedBox(height: 12),
+                        _buildAmountField(
+                          _usedAmountController,
+                          hint: 'e.g. 20,000',
+                        ),
+                        const SizedBox(height: 24),
+                        _buildLabel('AVAILABLE CREDIT'),
+                        const SizedBox(height: 12),
+                        _buildAmountField(
+                          _amountController,
+                          readOnly: true,
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 24),
+                        _buildLabel('CURRENT BALANCE'),
+                        const SizedBox(height: 12),
+                        _buildAmountField(
+                          _amountController,
+                          hint: 'e.g. 50,000',
                         ),
                       ],
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 48),
 
                       // Submit Button
                       SizedBox(
@@ -133,23 +180,23 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                               _limitController.text,
                             );
 
-                            IconData icon;
+                            String iconName;
                             Color iconColor;
                             Color bgColor;
 
                             switch (_selectedType) {
                               case AccountType.bank:
-                                icon = Icons.account_balance_wallet;
+                                iconName = AppIcons.accountbalancewallet;
                                 iconColor = AppColors.primaryPurple;
                                 bgColor = AppColors.primaryPurpleLight;
                                 break;
                               case AccountType.credit:
-                                icon = Icons.credit_card;
+                                iconName = AppIcons.creditcard;
                                 iconColor = AppColors.shoppingIcon;
                                 bgColor = AppColors.shoppingBg;
                                 break;
                               case AccountType.cash:
-                                icon = Icons.bolt;
+                                iconName = AppIcons.bolt;
                                 iconColor = AppColors.progressOrange;
                                 bgColor = AppColors.foodBg;
                                 break;
@@ -162,7 +209,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                                 type: _selectedType,
                                 balance: amount,
                                 limit: limit,
-                                icon: icon,
+                                iconName: iconName,
                                 iconColor: iconColor,
                                 backgroundColor: bgColor,
                               );
@@ -178,7 +225,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                                 type: _selectedType,
                                 balance: amount,
                                 limit: limit,
-                                icon: icon,
+                                iconName: iconName,
                                 iconColor: iconColor,
                                 backgroundColor: bgColor,
                               );
@@ -294,6 +341,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   Widget _buildAmountField(
     TextEditingController controller, {
     String hint = '0',
+    bool readOnly = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -316,7 +364,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           Expanded(
             child: TextField(
               controller: controller,
-              keyboardType: TextInputType.number,
+              readOnly: readOnly,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               style: const TextStyle(
                 color: AppColors.textDark,
                 fontSize: 18,

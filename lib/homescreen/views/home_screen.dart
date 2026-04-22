@@ -1,5 +1,6 @@
-import 'package:expensetracker/emis/controllers/emi_controller.dart';
-import 'package:expensetracker/settings/controllers/payment_methods_controller.dart';
+import 'package:mtracker/emis/controllers/emi_controller.dart';
+import 'package:mtracker/settings/controllers/payment_methods_controller.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -38,23 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primaryPurple.withOpacity(0.1),
-                          width: 2,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: AppColors.softBorder,
-                        backgroundImage: NetworkImage(
-                          _controller.user.avatarUrl,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 4),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -133,17 +118,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Upcoming Bills
             Consumer<PaymentMethodsController>(
-              builder: (context, paymentController, _) =>
-                  UpcomingBills(bills: paymentController.upcomingBills),
+              builder: (context, paymentController, _) {
+                final bills = paymentController.upcomingBills;
+                if (bills.isEmpty) return const SizedBox.shrink();
+                
+                return Column(
+                  children: [
+                    UpcomingBills(bills: bills),
+                    const SizedBox(height: 40),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 40),
 
             // EMI Progress
             Consumer<EmiController>(
-              builder: (context, emiController, _) =>
-                  EmiProgress(emis: emiController.activeEmis),
+              builder: (context, emiController, _) {
+                final activeEmis = emiController.activeEmis;
+                if (activeEmis.isEmpty) return const SizedBox.shrink();
+
+                return Column(
+                  children: [
+                    EmiProgress(emis: activeEmis),
+                    const SizedBox(height: 40),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 40),
 
             // Recent Transactions
             RecentTransactions(transactions: _controller.transactions),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../root/utils/currency_util.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../../accounts/controllers/accounts_controller.dart';
 import '../controllers/payment_methods_controller.dart';
@@ -22,7 +23,7 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
       context,
       listen: false,
     );
-    _amountController.text = controller.budget.amount.toStringAsFixed(0);
+    _amountController.text = controller.budget.amount.toString();
     _selectedAccountId = controller.budget.accountId;
   }
 
@@ -105,7 +106,9 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
                           const SizedBox(height: 16),
                           TextField(
                             controller: _amountController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -227,7 +230,7 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Available: ₹${account.balance.toInt()}',
+                                        'Available: ${CurrencyUtil.format(account.balance)}',
                                         style: TextStyle(
                                           color: AppColors.textGray.withOpacity(
                                             0.7,
@@ -376,86 +379,98 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ...accountsController.accounts.map((account) {
-                final isSelected = _selectedAccountId == account.id;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedAccountId = account.id);
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primaryPurple.withOpacity(0.06)
-                          : AppColors.background,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryPurple.withOpacity(0.3)
-                            : Colors.transparent,
-                        width: 1.5,
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: accountsController.accounts.length,
+                  itemBuilder: (ctx, index) {
+                    final account = accountsController.accounts[index];
+                    final isSelected = _selectedAccountId == account.id;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedAccountId = account.id);
+                        Navigator.pop(ctx);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryPurple.withOpacity(0.06)
+                              : AppColors.background,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primaryPurple.withOpacity(0.3)
+                                : Colors.transparent,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: account.backgroundColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                account.icon,
+                                color: account.iconColor,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    account.name,
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${CurrencyUtil.format(account.balance)} available',
+                                    style: TextStyle(
+                                      color: AppColors.textGray.withOpacity(
+                                        0.6,
+                                      ),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isSelected)
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primaryPurple,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: account.backgroundColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            account.icon,
-                            color: account.iconColor,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                account.name,
-                                style: const TextStyle(
-                                  color: AppColors.textDark,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '₹${account.balance.toInt()} available',
-                                style: TextStyle(
-                                  color: AppColors.textGray.withOpacity(0.6),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isSelected)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryPurple,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         );

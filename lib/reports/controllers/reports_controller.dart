@@ -1,31 +1,89 @@
 import 'package:flutter/material.dart';
-import '../models/report_model.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:mtracker/root/services/firebase_service.dart';
+
+enum ReportMode { salary, analytics }
 
 class ReportsController extends ChangeNotifier {
-  // Chart Mock Data
-  final List<FlSpot> incomeSpots = const [
-    FlSpot(0, 48),
-    FlSpot(1, 42),
-    FlSpot(2, 55),
-    FlSpot(3, 50),
-    FlSpot(4, 60),
-  ];
-
-  final List<FlSpot> expenseSpots = const [
-    FlSpot(0, 30),
-    FlSpot(1, 35),
-    FlSpot(2, 40),
-    FlSpot(3, 25),
-    FlSpot(4, 32),
-  ];
+  final FirestoreService _firestoreService = FirestoreService();
 
   // Filtering State
-  int _selectedYear = 2026;
-  int _selectedMonth = 4; // April
+  int _selectedYear = DateTime.now().year;
+  int _selectedMonth = DateTime.now().month;
+  ReportMode _selectedMode = ReportMode.salary;
+
+  List<DateTime> _availableMonths = [];
+  bool _isLoading = true;
 
   int get selectedYear => _selectedYear;
   int get selectedMonth => _selectedMonth;
+  ReportMode get selectedMode => _selectedMode;
+  List<DateTime> get availableMonths => _availableMonths;
+  bool get isLoading => _isLoading;
+
+  ReportsController() {
+    refreshAvailableMonths();
+  }
+
+  Future<void> refreshAvailableMonths() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // 1. Fetch Profile for Account Creation Date
+      final profile = await _firestoreService.getProfile().first;
+      final accountCreated = profile?.createdAt ?? DateTime.now();
+      final startMonth = DateTime(accountCreated.year, accountCreated.month, 1);
+
+      // 2. Fetch all document IDs from salary_reports
+      final snapshot = await _firestoreService.getSalaryReportsSnapshot();
+      final Set<DateTime> monthsSet = {};
+      final now = DateTime.now();
+      final currentMonthLimit = DateTime(now.year, now.month, 1);
+
+      // Add months with actual reports (STRICTLY WITHIN ACCOUNT LIFETIME)
+      for (var doc in snapshot.docs) {
+        try {
+          final parts = doc.id.split('_');
+          if (parts.length == 2) {
+            final year = int.parse(parts[0]);
+            final month = int.parse(parts[1]);
+            final date = DateTime(year, month, 1);
+            
+            // Only add if it's not before account creation AND not after today
+            if (!date.isBefore(startMonth) && !date.isAfter(currentMonthLimit)) {
+              monthsSet.add(date);
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 3. Ensure current month and account start are always included in the discovery set
+      DateTime current = currentMonthLimit;
+      while (!current.isBefore(startMonth)) {
+        monthsSet.add(current);
+        current = DateTime(current.year, current.month - 1, 1);
+      }
+
+      final List<DateTime> months = monthsSet.toList();
+      months.sort((a, b) => b.compareTo(a));
+      _availableMonths = months;
+
+      if (!availableYears.contains(_selectedYear) && availableYears.isNotEmpty) {
+        _selectedYear = availableYears.first;
+      }
+    } catch (e) {
+      print('Error fetching available months: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  List<int> get availableYears {
+    final years = _availableMonths.map((m) => m.year).toSet().toList();
+    years.sort((a, b) => b.compareTo(a));
+    return years.isEmpty ? [DateTime.now().year] : years;
+  }
 
   void setYear(int year) {
     _selectedYear = year;
@@ -37,53 +95,8 @@ class ReportsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Downloadable Reports List
-  final List<ReportModel> _allReports = [
-    ReportModel(
-      title: 'April 2026',
-      format: 'PDF REPORT',
-      size: '2.4 MB',
-      date: DateTime(2026, 4, 1),
-    ),
-    ReportModel(
-      title: 'March 2026',
-      format: 'PDF REPORT',
-      size: '2.4 MB',
-      date: DateTime(2026, 3, 1),
-    ),
-    ReportModel(
-      title: 'February 2026',
-      format: 'PDF REPORT',
-      size: '2.2 MB',
-      date: DateTime(2026, 2, 1),
-    ),
-    ReportModel(
-      title: 'January 2026',
-      format: 'PDF REPORT',
-      size: '2.5 MB',
-      date: DateTime(2026, 1, 1),
-    ),
-    ReportModel(
-      title: 'December 2025',
-      format: 'PDF REPORT',
-      size: '2.8 MB',
-      date: DateTime(2025, 12, 1),
-    ),
-    ReportModel(
-      title: 'November 2025',
-      format: 'PDF REPORT',
-      size: '2.1 MB',
-      date: DateTime(2025, 11, 1),
-    ),
-  ];
-
-  List<ReportModel> get availableReports {
-    return _allReports
-        .where(
-          (r) => r.date.year == _selectedYear && r.date.month == _selectedMonth,
-        )
-        .toList();
+  void setMode(ReportMode mode) {
+    _selectedMode = mode;
+    notifyListeners();
   }
-
-  List<int> get availableYears => [2026, 2025];
 }

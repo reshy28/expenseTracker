@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../root/utils/app_icons.dart';
 
 class BillModel {
   final String title;
   final double amount;
   final String dueDate;
   final String dueInDays;
-  final IconData icon;
+  final String iconName;
   final Color backgroundColor;
   final Color iconColor;
 
@@ -14,8 +15,12 @@ class BillModel {
     required this.amount,
     required this.dueDate,
     required this.dueInDays,
-    required this.icon,
+    required this.iconName,
     required this.backgroundColor,
     required this.iconColor,
   });
+
+  /// Reconstruct IconData at runtime (safe for tree shaking)
+  IconData get icon => AppIcons.get(iconName);
 }
+

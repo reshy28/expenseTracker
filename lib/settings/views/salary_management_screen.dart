@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../root/utils/currency_util.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/payment_methods_controller.dart';
 import '../models/payment_models.dart';
+import '../../root/utils/app_icons.dart';
+
+import '../../reports/views/reports_screen.dart';
 
 class SalaryManagementScreen extends StatefulWidget {
   const SalaryManagementScreen({super.key});
@@ -22,7 +25,7 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
   void initState() {
     super.initState();
     final controller = context.read<PaymentMethodsController>();
-    _salaryController.text = controller.salaryAmount.toStringAsFixed(0);
+    _salaryController.text = controller.salaryAmount.toString();
   }
 
   @override
@@ -36,7 +39,7 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
   void _showAddExpenseBottomSheet({SalaryExpenseModel? expenseToEdit}) {
     if (expenseToEdit != null) {
       _expenseNameController.text = expenseToEdit.name;
-      _expenseAmountController.text = expenseToEdit.amount.toStringAsFixed(0);
+      _expenseAmountController.text = expenseToEdit.amount.toString();
     } else {
       _expenseNameController.clear();
       _expenseAmountController.clear();
@@ -59,70 +62,89 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
               topRight: Radius.circular(32),
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                expenseToEdit != null ? 'Edit Expense' : 'Add New Expense',
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  expenseToEdit != null ? 'Edit Expense' : 'Add New Expense',
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              _buildTextField(_expenseNameController, 'Expense Name', 'e.g. Phone Display'),
-              const SizedBox(height: 16),
-              _buildTextField(_expenseAmountController, 'Amount', '₹ 0', isNumber: true),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_expenseNameController.text.isNotEmpty &&
-                        _expenseAmountController.text.isNotEmpty) {
-                      final amount = double.tryParse(_expenseAmountController.text) ?? 0.0;
-                      final expense = SalaryExpenseModel(
-                        id: expenseToEdit?.id ??
-                            DateTime.now().millisecondsSinceEpoch.toString(),
-                        name: _expenseNameController.text,
-                        amount: amount,
-                        icon: Icons.receipt_long_outlined,
-                        backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
-                        iconColor: AppColors.primaryPurple,
-                        dateAdded: expenseToEdit?.dateAdded ?? DateTime.now(),
-                      );
+                const SizedBox(height: 24),
+                _buildTextField(
+                  _expenseNameController,
+                  'Expense Name',
+                  'e.g. Phone Display',
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  _expenseAmountController,
+                  'Amount',
+                  '₹ 0',
+                  isNumber: true,
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_expenseNameController.text.isNotEmpty &&
+                          _expenseAmountController.text.isNotEmpty) {
+                        final amount =
+                            double.tryParse(_expenseAmountController.text) ?? 0.0;
+                        final expense = SalaryExpenseModel(
+                          id:
+                              expenseToEdit?.id ??
+                              DateTime.now().millisecondsSinceEpoch.toString(),
+                          name: _expenseNameController.text,
+                          amount: amount,
+                          iconName: AppIcons.receiptlong,
+                          backgroundColor: AppColors.primaryPurple.withOpacity(
+                            0.1,
+                          ),
+                          iconColor: AppColors.primaryPurple,
+                          dateAdded: expenseToEdit?.dateAdded ?? DateTime.now(),
+                        );
 
-                      if (expenseToEdit != null) {
-                        context.read<PaymentMethodsController>().updateSalaryExpense(expense);
-                      } else {
-                        context.read<PaymentMethodsController>().addSalaryExpense(expense);
+                        if (expenseToEdit != null) {
+                          context
+                              .read<PaymentMethodsController>()
+                              .updateSalaryExpense(expense);
+                        } else {
+                          context
+                              .read<PaymentMethodsController>()
+                              .addSalaryExpense(expense);
+                        }
+
+                        _expenseNameController.clear();
+                        _expenseAmountController.clear();
+                        Navigator.pop(context);
                       }
-                      
-                      _expenseNameController.clear();
-                      _expenseAmountController.clear();
-                      Navigator.pop(context);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryPurple,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    expenseToEdit != null ? 'Update Expense' : 'Add Expense',
-                    style: const TextStyle(
-                      color: AppColors.textLight,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    child: Text(
+                      expenseToEdit != null ? 'Update Expense' : 'Add Expense',
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -159,87 +181,117 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Add recurring costs to your salary budget',
-                style: TextStyle(
-                  color: AppColors.textGray,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.textGray, fontSize: 14),
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: ListView.builder(
-                  itemCount: controller.fixedExpenses.length,
-                  itemBuilder: (context, index) {
-                    final expense = controller.fixedExpenses[index];
-                    final isSelected =
-                        controller.salaryFixedExpenseIds.contains(expense.id);
-                    return GestureDetector(
-                      onTap: () =>
-                          controller.toggleFixedExpenseInSalary(expense.id),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primaryPurple.withOpacity(0.05)
-                              : AppColors.textLight,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primaryPurple
-                                : AppColors.softBorder,
-                          ),
-                        ),
-                        child: Row(
+                child: controller.fixedExpenses.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: expense.backgroundColor,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                expense.icon,
-                                color: expense.iconColor,
-                                size: 20,
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 48,
+                              color: AppColors.textGray.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No fixed expenses found',
+                              style: TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add them in My Accounts > Fixed Expenses',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.textGray.withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: controller.fixedExpenses.length,
+                        itemBuilder: (context, index) {
+                          final expense = controller.fixedExpenses[index];
+                          final isSelected = controller.salaryFixedExpenseIds
+                              .contains(expense.id);
+                          return GestureDetector(
+                            onTap: () => controller.toggleFixedExpenseInSalary(
+                              expense.id,
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primaryPurple.withOpacity(0.05)
+                                    : AppColors.textLight,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primaryPurple
+                                      : AppColors.softBorder,
+                                ),
+                              ),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    expense.name,
-                                    style: const TextStyle(
-                                      color: AppColors.textDark,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: expense.backgroundColor,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      expense.icon,
+                                      color: expense.iconColor,
+                                      size: 20,
                                     ),
                                   ),
-                                  Text(
-                                    '₹ ${expense.amount.toInt()}',
-                                    style: const TextStyle(
-                                      color: AppColors.textGray,
-                                      fontSize: 12,
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          expense.name,
+                                          style: const TextStyle(
+                                            color: AppColors.textDark,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          CurrencyUtil.format(expense.amount),
+                                          style: const TextStyle(
+                                            color: AppColors.textGray,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.add_circle_outline,
+                                    color: isSelected
+                                        ? AppColors.primaryPurple
+                                        : AppColors.textGray,
                                   ),
                                 ],
                               ),
                             ),
-                            Icon(
-                              isSelected
-                                  ? Icons.check_circle
-                                  : Icons.add_circle_outline,
-                              color: isSelected
-                                  ? AppColors.primaryPurple
-                                  : AppColors.textGray,
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -270,6 +322,8 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
   }
 
   void _showEditSalaryDialog() {
+    final controller = context.read<PaymentMethodsController>();
+    _salaryController.text = controller.salaryAmount.toString();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -284,7 +338,7 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
         ),
         content: TextField(
           controller: _salaryController,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
             hintText: 'Enter salary amount',
             prefixText: '₹ ',
@@ -293,7 +347,10 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textGray)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textGray),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -303,9 +360,14 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('Save', style: TextStyle(color: AppColors.textLight)),
+            child: const Text(
+              'Save',
+              style: TextStyle(color: AppColors.textLight),
+            ),
           ),
         ],
       ),
@@ -314,11 +376,7 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
+    final controller = context.watch<PaymentMethodsController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -349,12 +407,14 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Text(
-                    'Salary Management',
-                    style: TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  const Expanded(
+                    child: Text(
+                      'Salary Management',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -362,45 +422,45 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
             ),
 
             Expanded(
-              child: Consumer<PaymentMethodsController>(
-                builder: (context, controller, child) {
-                  return ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    children: [
-                      // Salary Card
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(32),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryPurple.withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                children: [
+                  // Salary Card
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryPurple.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
-                        child: Column(
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'SALARY BUDGET',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
+                                Text(
+                                  '${controller.currentMonthHeader} BUDGET',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      currencyFormat.format(controller.salaryAmount),
+                                      CurrencyUtil.format(
+                                        controller.salaryAmount,
+                                      ),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 28,
@@ -446,7 +506,9 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      currencyFormat.format(controller.remainingSalaryBalance),
+                                      CurrencyUtil.format(
+                                        controller.remainingSalaryBalance,
+                                      ),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 24,
@@ -456,7 +518,10 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
                                   ],
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(10),
@@ -480,63 +545,89 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
 
                       // Fixed Expenses Section
                       _buildSectionHeader(
-                        'FIXED EXPENSES', 
-                        controller.fixedExpenses.where((e) => controller.salaryFixedExpenseIds.contains(e.id)).length,
-                        onAdd: () => _showFixedExpenseSelectionSheet(controller),
+                        'FIXED EXPENSES',
+                        controller.fixedExpenses
+                            .where(
+                              (e) => controller.salaryFixedExpenseIds.contains(
+                                e.id,
+                              ),
+                            )
+                            .length,
+                        onAdd: () =>
+                            _showFixedExpenseSelectionSheet(controller),
                       ),
                       const SizedBox(height: 16),
                       if (controller.salaryFixedExpenseIds.isEmpty)
                         _buildEmptyState('No fixed expenses selected.')
                       else
                         ...controller.fixedExpenses
-                            .where((e) => controller.salaryFixedExpenseIds.contains(e.id))
-                            .map((expense) => Dismissible(
-                              key: Key('fixed_${expense.id}'),
-                              direction: DismissDirection.endToStart,
-                              background: _buildDismissBackground(Icons.link_off),
-                              onDismissed: (_) {
-                                controller.toggleFixedExpenseInSalary(expense.id);
-                              },
-                              child: _buildExpenseTile(
-                                title: expense.name,
-                                amount: expense.amount,
-                                icon: expense.icon,
-                                bgColor: expense.backgroundColor,
-                                iconColor: expense.iconColor,
-                                date: 'Due on day ${expense.dueDay}',
+                            .where(
+                              (e) => controller.salaryFixedExpenseIds.contains(
+                                e.id,
                               ),
-                            )),
+                            )
+                            .map(
+                              (expense) => Dismissible(
+                                key: Key('fixed_${expense.id}'),
+                                direction: DismissDirection.endToStart,
+                                background: _buildDismissBackground(
+                                  Icons.link_off,
+                                ),
+                                onDismissed: (_) {
+                                  controller.toggleFixedExpenseInSalary(
+                                    expense.id,
+                                  );
+                                },
+                                child: _buildExpenseTile(
+                                  title: expense.name,
+                                  amount: expense.amount,
+                                  icon: expense.icon,
+                                  bgColor: expense.backgroundColor,
+                                  iconColor: expense.iconColor,
+                                  date: 'Due on day ${expense.dueDay}',
+                                ),
+                              ),
+                            ),
 
                       const SizedBox(height: 32),
 
                       // Additional Expenses Section
-                      _buildSectionHeader('OTHER EXPENSES', controller.additionalSalaryExpenses.length),
+                      _buildSectionHeader(
+                        'OTHER EXPENSES',
+                        controller.additionalSalaryExpenses.length,
+                      ),
                       const SizedBox(height: 16),
                       if (controller.additionalSalaryExpenses.isEmpty)
                         _buildEmptyState('No additional expenses added yet.')
                       else
-                        ...controller.additionalSalaryExpenses.map((expense) => Dismissible(
-                          key: Key('other_${expense.id}'),
-                          direction: DismissDirection.endToStart,
-                          background: _buildDismissBackground(Icons.delete_outline),
-                          onDismissed: (_) {
-                            controller.deleteSalaryExpense(expense.id);
-                          },
-                          child: _buildExpenseTile(
-                            title: expense.name,
-                            amount: expense.amount,
-                            icon: expense.icon,
-                            bgColor: expense.backgroundColor,
-                            iconColor: expense.iconColor,
-                            date: DateFormat('MMM dd, yyyy').format(expense.dateAdded),
-                            onEdit: () => _showAddExpenseBottomSheet(expenseToEdit: expense),
+                        ...controller.additionalSalaryExpenses.map(
+                          (expense) => Dismissible(
+                            key: Key('other_${expense.id}'),
+                            direction: DismissDirection.endToStart,
+                            background: _buildDismissBackground(
+                              Icons.delete_outline,
+                            ),
+                            onDismissed: (_) {
+                              controller.deleteSalaryExpense(expense.id);
+                            },
+                            child: _buildExpenseTile(
+                              title: expense.name,
+                              amount: expense.amount,
+                              icon: expense.icon,
+                              bgColor: expense.backgroundColor,
+                              iconColor: expense.iconColor,
+                              date: DateFormat(
+                                'MMM dd, yyyy',
+                              ).format(expense.dateAdded),
+                              onEdit: () => _showAddExpenseBottomSheet(
+                                expenseToEdit: expense,
+                              ),
+                            ),
                           ),
-                        )),
+                        ),
                       const SizedBox(height: 100),
                     ],
-                  );
-                },
-              ),
+                  ),
             ),
           ],
         ),
@@ -547,10 +638,7 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           'Add Expense',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -631,12 +719,6 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
     required String date,
     VoidCallback? onEdit,
   }) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
-
     return GestureDetector(
       onTap: onEdit,
       child: Container(
@@ -679,7 +761,7 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
               ),
             ),
             Text(
-              currencyFormat.format(amount),
+              CurrencyUtil.format(amount),
               style: const TextStyle(
                 color: AppColors.redAlertText,
                 fontSize: 16,
@@ -708,7 +790,12 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, String hint, {bool isNumber = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    String hint, {
+    bool isNumber = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -731,7 +818,9 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
           ),
           child: TextField(
             controller: controller,
-            keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+            keyboardType: isNumber
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : TextInputType.text,
             style: const TextStyle(
               color: AppColors.textDark,
               fontSize: 14,

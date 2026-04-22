@@ -1,3 +1,4 @@
+import 'package:mtracker/root/utils/currency_util.dart';
 import 'package:flutter/material.dart';
 import '../../models/bill_model.dart';
 import '../app_colors.dart';
@@ -89,27 +90,33 @@ class UpcomingBills extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '₹${bill.amount.toInt().toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")}',
-                      style: const TextStyle(
-                        color: AppColors.redAlertText,
-                        fontSize: 16,
+                      CurrencyUtil.format(bill.amount),
+                      style: TextStyle(
+                        color: bill.dueInDays.toLowerCase() == 'due today'
+                            ? AppColors.redAlertText
+                            : AppColors.textDark,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.orangeAlertText.withOpacity(0.08),
+                        color: bill.dueInDays.toLowerCase() == 'due today'
+                            ? AppColors.redAlertText.withOpacity(0.08)
+                            : AppColors.orangeAlertText.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         bill.dueInDays.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.orangeAlertText,
+                        style: TextStyle(
+                          color: bill.dueInDays.toLowerCase() == 'due today'
+                              ? AppColors.redAlertText
+                              : AppColors.orangeAlertText,
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,

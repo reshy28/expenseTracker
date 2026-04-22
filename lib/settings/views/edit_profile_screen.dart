@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:iconly/iconly.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/profile_controller.dart';
+import '../../auth/services/auth_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -15,7 +15,6 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  String? _avatarPath;
 
   @override
   void initState() {
@@ -25,8 +24,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       listen: false,
     );
     _nameController = TextEditingController(text: profileController.user.name);
-    _emailController = TextEditingController(text: profileController.user.email);
-    _avatarPath = profileController.user.avatarUrl;
+    _emailController = TextEditingController(
+      text: profileController.user.email,
+    );
   }
 
   @override
@@ -36,21 +36,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _avatarPath = pickedFile.path;
-      });
-    }
-  }
-
   void _saveProfile() {
     Provider.of<ProfileController>(context, listen: false).updateProfile(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
-      avatarUrl: _avatarPath,
     );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -110,61 +99,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Avatar Preview
-                    Center(
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: AppColors.primaryPurple.withOpacity(0.2), width: 3),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primaryPurple.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: CircleAvatar(
-                                radius: 55,
-                                backgroundColor: AppColors.softBorder,
-                                backgroundImage: _avatarPath != null && _avatarPath!.isNotEmpty
-                                    ? (_avatarPath!.startsWith('http')
-                                            ? NetworkImage(_avatarPath!)
-                                            : FileImage(File(_avatarPath!)))
-                                        as ImageProvider
-                                    : const NetworkImage('https://i.pravatar.cc/150?u=fallback'),
-                                onBackgroundImageError: (exception, stackTrace) {},
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryPurple,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 32),
 
                     // Inputs
                     _buildInputField('FULL NAME', _nameController),
                     const SizedBox(height: 24),
-                    _buildInputField('EMAIL ADDRESS', _emailController, TextInputType.emailAddress),
+                    _buildInputField(
+                      'EMAIL ADDRESS',
+                      _emailController,
+                      TextInputType.emailAddress,
+                    ),
                     const SizedBox(height: 48),
 
                     // Save Button
@@ -217,6 +161,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 16),
+
+                    // Logout Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => _showLogoutConfirmation(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          side: const BorderSide(color: AppColors.redAlertText),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text(
+                          'LOGOUT',
+                          style: TextStyle(
+                            color: AppColors.redAlertText,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -227,7 +198,108 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, [TextInputType keyboardType = TextInputType.text]) {
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: AppColors.background,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.redLight.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  IconlyLight.logout,
+                  color: AppColors.redAlertText,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Logout',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Are you sure you want to logout? You will need to sign in again to access your data.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textGray,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: AppColors.softBorder),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await AuthService().signOut();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.redAlertText,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Yes, Logout',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, [
+    TextInputType keyboardType = TextInputType.text,
+  ]) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: AppColors.premiumCardDecoration.copyWith(

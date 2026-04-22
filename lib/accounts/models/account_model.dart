@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../root/utils/app_icons.dart';
 
 enum AccountType { bank, credit, cash }
 
@@ -8,7 +9,7 @@ class AccountModel {
   final AccountType type;
   final double balance;
   final double? limit;
-  final IconData icon;
+  final String iconName;
   final Color iconColor;
   final Color backgroundColor;
 
@@ -18,10 +19,13 @@ class AccountModel {
     required this.type,
     required this.balance,
     this.limit,
-    required this.icon,
+    required this.iconName,
     required this.iconColor,
     required this.backgroundColor,
   });
+
+  /// Reconstruct IconData at runtime (safe for tree shaking)
+  IconData get icon => AppIcons.get(iconName);
 
   Map<String, dynamic> toMap() {
     return {
@@ -30,7 +34,7 @@ class AccountModel {
       'type': type.name,
       'balance': balance,
       'limit': limit,
-      'iconCode': icon.codePoint,
+      'iconName': iconName,
       'iconColor': iconColor.value,
       'backgroundColor': backgroundColor.value,
     };
@@ -46,7 +50,10 @@ class AccountModel {
       ),
       balance: (map['balance'] ?? 0.0).toDouble(),
       limit: map['limit']?.toDouble(),
-      icon: IconData(map['iconCode'] ?? 0xe0b0, fontFamily: 'MaterialIcons'),
+      iconName:
+          map['iconName'] ??
+          map['iconCode']?.toString() ??
+          'account_balance_wallet',
       iconColor: Color(map['iconColor'] ?? 0xFF000000),
       backgroundColor: Color(map['backgroundColor'] ?? 0xFFFFFFFF),
     );

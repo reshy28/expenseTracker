@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../homescreen/models/transaction_model.dart';
-import '../../homescreen/views/app_colors.dart';
 import '../../root/services/firebase_service.dart';
 
 class TransactionsController extends ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  String selectedFilter = 'All'; // Can be 'All', 'Expense', 'Income'
+  String selectedFilter = 'All';
   DateTimeRange? selectedDateRange;
   String searchQuery = '';
   List<TransactionModel> _allTransactions = [];
+  List<Map<String, dynamic>> _pendingTransactions = [];
   bool _isLoading = true;
 
   TransactionsController() {
@@ -21,6 +21,12 @@ class TransactionsController extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     });
+  }
+
+  Future<void> refresh() async {
+    // Artificial delay to show the indicator
+    await Future.delayed(const Duration(seconds: 1));
+    _init();
   }
 
   bool get isLoading => _isLoading;
@@ -62,7 +68,25 @@ class TransactionsController extends ChangeNotifier {
   }
 
   Future<void> addTransaction(TransactionModel transaction) async {
-    await _firestoreService.saveTransaction(transaction);
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _firestoreService.saveTransactionAndUpdateBalance(transaction);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteTransaction(TransactionModel transaction) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _firestoreService.deleteTransactionAndUpdateBalance(transaction);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   void setFilter(String filter) {

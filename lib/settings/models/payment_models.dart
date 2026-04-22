@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../root/utils/app_icons.dart';
 
 class FixedExpenseModel {
   final String id;
@@ -6,9 +7,10 @@ class FixedExpenseModel {
   final double amount;
   final String? accountId; // The account intended for payment
   final int dueDay; // Day of the month (1-31)
-  final IconData icon;
+  final String iconName;
   final Color backgroundColor;
   final Color iconColor;
+  final String? categoryId;
 
   FixedExpenseModel({
     required this.id,
@@ -16,10 +18,14 @@ class FixedExpenseModel {
     required this.amount,
     this.accountId,
     required this.dueDay,
-    required this.icon,
+    required this.iconName,
     required this.backgroundColor,
     required this.iconColor,
+    this.categoryId,
   });
+
+  /// Reconstruct IconData at runtime (safe for tree shaking)
+  IconData get icon => AppIcons.get(iconName);
 
   Map<String, dynamic> toMap() {
     return {
@@ -28,9 +34,10 @@ class FixedExpenseModel {
       'amount': amount,
       'accountId': accountId,
       'dueDay': dueDay,
-      'iconCode': icon.codePoint,
+      'iconName': iconName,
       'backgroundColor': backgroundColor.value,
       'iconColor': iconColor.value,
+      'categoryId': categoryId,
     };
   }
 
@@ -41,9 +48,10 @@ class FixedExpenseModel {
       amount: (map['amount'] ?? 0.0).toDouble(),
       accountId: map['accountId'],
       dueDay: map['dueDay'] ?? 1,
-      icon: IconData(map['iconCode'] ?? 0xe0b0, fontFamily: 'MaterialIcons'),
+      iconName: map['iconName'] ?? map['iconCode']?.toString() ?? 'receipt_long',
       backgroundColor: Color(map['backgroundColor'] ?? 0xFFFFFFFF),
       iconColor: Color(map['iconColor'] ?? 0xFF000000),
+      categoryId: map['categoryId'],
     );
   }
 
@@ -93,7 +101,7 @@ class SalaryExpenseModel {
   final String id;
   final String name;
   final double amount;
-  final IconData icon;
+  final String iconName;
   final Color backgroundColor;
   final Color iconColor;
   final DateTime dateAdded;
@@ -102,18 +110,21 @@ class SalaryExpenseModel {
     required this.id,
     required this.name,
     required this.amount,
-    required this.icon,
+    required this.iconName,
     required this.backgroundColor,
     required this.iconColor,
     required this.dateAdded,
   });
+
+  /// Reconstruct IconData at runtime (safe for tree shaking)
+  IconData get icon => AppIcons.get(iconName);
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
       'amount': amount,
-      'iconCode': icon.codePoint,
+      'iconName': iconName,
       'backgroundColor': backgroundColor.value,
       'iconColor': iconColor.value,
       'dateAdded': dateAdded.toIso8601String(),
@@ -125,7 +136,7 @@ class SalaryExpenseModel {
       id: map['id'] ?? '',
       name: map['name'] ?? '',
       amount: (map['amount'] ?? 0.0).toDouble(),
-      icon: IconData(map['iconCode'] ?? 0xe0b0, fontFamily: 'MaterialIcons'),
+      iconName: map['iconName'] ?? map['iconCode']?.toString() ?? 'receipt_long',
       backgroundColor: Color(map['backgroundColor'] ?? 0xFFFFFFFF),
       iconColor: Color(map['iconColor'] ?? 0xFF000000),
       dateAdded: DateTime.parse(

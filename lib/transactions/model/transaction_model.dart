@@ -5,7 +5,7 @@ class TransactionModel {
   final double amount;
   final bool isExpense;
   final DateTime date;
-  final IconData icon;
+  final int iconCode;
   final Color iconColor;
   final Color iconBackgroundColor;
 
@@ -14,10 +14,13 @@ class TransactionModel {
     required this.amount,
     required this.isExpense,
     required this.date,
-    required this.icon,
+    required this.iconCode,
     required this.iconColor,
     required this.iconBackgroundColor,
   });
+
+  /// Reconstruct IconData at runtime (safe for tree shaking)
+  IconData get icon => IconData(iconCode, fontFamily: 'MaterialIcons');
 
   String get dateSubtitle {
     return "${date.day}/${date.month}/${date.year}";

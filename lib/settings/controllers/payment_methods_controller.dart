@@ -1,12 +1,17 @@
+import 'dart:async';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:mtracker/root/services/firebase_service.dart';
 import '../models/payment_models.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../../homescreen/models/bill_model.dart';
-import '../../root/services/firebase_service.dart';
+import '../../root/utils/currency_util.dart';
+import '../../root/services/notification_service.dart';
 
 class PaymentMethodsController extends ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  
+  final NotificationService _notificationService = NotificationService();
+
   // State
   BudgetModel _budget = BudgetModel(amount: 0, accountId: null);
   double _salaryAmount = 0.0;
@@ -15,49 +20,80 @@ class PaymentMethodsController extends ChangeNotifier {
   List<FixedExpenseModel> _fixedExpenses = [];
   bool _isLoading = true;
 
+  StreamSubscription? _salarySubscription;
+  StreamSubscription? _fixedExpensesSubscription;
+
   PaymentMethodsController() {
     _init();
   }
 
   void _init() {
-    // Listen to fixed expenses
-    _firestoreService.getFixedExpenses().listen((expenses) {
+    // Listen to fixed expenses (global)
+    _fixedExpensesSubscription = _firestoreService.getFixedExpenses().listen((
+      expenses,
+    ) {
       _fixedExpenses = expenses;
-      _isLoading = false;
+
+      // Schedule notifications for all fixed expenses
+      for (var expense in expenses) {
+        _notificationService.scheduleMonthlyReminder(
+          id: expense.id.hashCode,
+          title: 'Bill Due: ${expense.name}',
+          body:
+              'Your payment of ${CurrencyUtil.format(expense.amount)} is due today.',
+          dayOfMonth: expense.dueDay,
+        );
+      }
+
       notifyListeners();
     });
 
-    // Listen to settings (salary, budget, etc.)
-    _firestoreService.getSettings().listen((snapshot) {
-      if (snapshot.exists) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        
-        if (data.containsKey('budget')) {
-          _budget = BudgetModel.fromMap(data['budget']);
-        }
-        
-        _salaryAmount = (data['salaryAmount'] ?? 0.0).toDouble();
-        
-        if (data.containsKey('salaryFixedExpenseIds')) {
-          _salaryFixedExpenseIds = List<String>.from(data['salaryFixedExpenseIds']);
-        }
-
-        if (data.containsKey('additionalSalaryExpenses')) {
-          _additionalSalaryExpenses = (data['additionalSalaryExpenses'] as List)
-              .map((e) => SalaryExpenseModel.fromMap(e))
-              .toList();
-        }
-        
-        notifyListeners();
+    // Listen to Salary (Reverted to Global)
+    _salarySubscription = _firestoreService.getSalaryConfig().listen((data) {
+      if (data.containsKey('budget')) {
+        _budget = BudgetModel.fromMap(data['budget']);
       }
+
+      _salaryAmount = (data['salaryAmount'] ?? 0.0).toDouble();
+
+      if (data.containsKey('salaryFixedExpenseIds')) {
+        _salaryFixedExpenseIds = List<String>.from(
+          data['salaryFixedExpenseIds'],
+        );
+      }
+
+      if (data.containsKey('additionalSalaryExpenses')) {
+        _additionalSalaryExpenses = (data['additionalSalaryExpenses'] as List)
+            .map((e) => SalaryExpenseModel.fromMap(e))
+            .toList();
+      }
+
+      _isLoading = false;
+      notifyListeners();
     });
   }
 
+  @override
+  void dispose() {
+    _salarySubscription?.cancel();
+    _fixedExpensesSubscription?.cancel();
+    super.dispose();
+  }
+
+  // Getters
+
+  // Header shows current month automatically
+  String get currentMonthHeader =>
+      DateFormat('MMMM yyyy').format(DateTime.now()).toUpperCase();
+
   BudgetModel get budget => _budget;
-  List<FixedExpenseModel> get fixedExpenses => List.unmodifiable(_fixedExpenses);
+  List<FixedExpenseModel> get fixedExpenses =>
+      List.unmodifiable(_fixedExpenses);
   double get salaryAmount => _salaryAmount;
-  List<SalaryExpenseModel> get additionalSalaryExpenses => List.unmodifiable(_additionalSalaryExpenses);
-  List<String> get salaryFixedExpenseIds => List.unmodifiable(_salaryFixedExpenseIds);
+  List<SalaryExpenseModel> get additionalSalaryExpenses =>
+      List.unmodifiable(_additionalSalaryExpenses);
+  List<String> get salaryFixedExpenseIds =>
+      List.unmodifiable(_salaryFixedExpenseIds);
   bool get isLoading => _isLoading;
 
   double get remainingSalaryBalance {
@@ -65,7 +101,9 @@ class PaymentMethodsController extends ChangeNotifier {
         .where((e) => _salaryFixedExpenseIds.contains(e.id))
         .fold(0.0, (sum, expense) => sum + expense.amount);
     double additionalTotal = _additionalSalaryExpenses.fold(
-        0.0, (sum, expense) => sum + expense.amount);
+      0.0,
+      (sum, expense) => sum + expense.amount,
+    );
     return _salaryAmount - fixedTotal - additionalTotal;
   }
 
@@ -84,7 +122,7 @@ class PaymentMethodsController extends ChangeNotifier {
             dueInDays: expense.daysUntilDue == 0
                 ? 'Due Today'
                 : 'Due in ${expense.daysUntilDue} days',
-            icon: expense.icon,
+            iconName: expense.iconName,
             backgroundColor: expense.backgroundColor,
             iconColor: expense.iconColor,
           );
@@ -102,7 +140,8 @@ class PaymentMethodsController extends ChangeNotifier {
 
   Future<void> setBudget(double amount, String? accountId) async {
     _budget = BudgetModel(amount: amount, accountId: accountId);
-    await _firestoreService.saveSettings({'budget': _budget.toMap()});
+    notifyListeners();
+    await _firestoreService.saveSalaryConfig({'budget': _budget.toMap()});
   }
 
   Future<void> addFixedExpense(FixedExpenseModel expense) async {
@@ -110,16 +149,20 @@ class PaymentMethodsController extends ChangeNotifier {
   }
 
   Future<void> deleteFixedExpense(String id) async {
+    await _notificationService.cancelNotification(id.hashCode);
     await _firestoreService.deleteFixedExpense(id);
   }
 
   Future<void> setSalaryAmount(double amount) async {
-    await _firestoreService.saveSettings({'salaryAmount': amount});
+    _salaryAmount = amount;
+    notifyListeners();
+    await _firestoreService.saveSalaryConfig({'salaryAmount': amount});
   }
 
   Future<void> addSalaryExpense(SalaryExpenseModel expense) async {
-    final newList = List<SalaryExpenseModel>.from(_additionalSalaryExpenses)..add(expense);
-    await _firestoreService.saveSettings({
+    final newList = List<SalaryExpenseModel>.from(_additionalSalaryExpenses)
+      ..add(expense);
+    await _firestoreService.saveSalaryConfig({
       'additionalSalaryExpenses': newList.map((e) => e.toMap()).toList(),
     });
   }
@@ -128,14 +171,14 @@ class PaymentMethodsController extends ChangeNotifier {
     final newList = _additionalSalaryExpenses.map((e) {
       return e.id == updatedExpense.id ? updatedExpense : e;
     }).toList();
-    await _firestoreService.saveSettings({
+    await _firestoreService.saveSalaryConfig({
       'additionalSalaryExpenses': newList.map((e) => e.toMap()).toList(),
     });
   }
 
   Future<void> deleteSalaryExpense(String id) async {
     final newList = _additionalSalaryExpenses.where((e) => e.id != id).toList();
-    await _firestoreService.saveSettings({
+    await _firestoreService.saveSalaryConfig({
       'additionalSalaryExpenses': newList.map((e) => e.toMap()).toList(),
     });
   }
@@ -147,11 +190,26 @@ class PaymentMethodsController extends ChangeNotifier {
     } else {
       newList.add(id);
     }
-    await _firestoreService.saveSettings({'salaryFixedExpenseIds': newList});
+    await _firestoreService.saveSalaryConfig({
+      'salaryFixedExpenseIds': newList,
+    });
   }
 
   String _getMonthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[month - 1];
   }
 

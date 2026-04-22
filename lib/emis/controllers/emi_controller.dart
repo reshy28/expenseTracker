@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../homescreen/models/emi_model.dart';
-import '../../homescreen/views/app_colors.dart';
+import '../../accounts/models/account_model.dart';
 import '../../root/services/firebase_service.dart';
 
 class EmiController extends ChangeNotifier {
@@ -22,36 +22,22 @@ class EmiController extends ChangeNotifier {
 
   List<EmiModel> get emis => List.unmodifiable(_emis);
   bool get isLoading => _isLoading;
-  
+
   List<EmiModel> get activeEmis =>
       _emis.where((e) => e.monthsPaid < e.totalMonths).toList();
   List<EmiModel> get completedEmis =>
       _emis.where((e) => e.monthsPaid == e.totalMonths).toList();
 
   Future<void> addEmi(EmiModel emi) async {
-    await _firestoreService.saveEmi(emi);
+    await _firestoreService.saveEmiWithInitialDeduction(emi);
   }
 
   Future<void> updateEmi(EmiModel updatedEmi) async {
     await _firestoreService.saveEmi(updatedEmi);
   }
 
-  Future<void> payEmi(String id) async {
-    final index = _emis.indexWhere((emi) => emi.id == id);
-    if (index != -1) {
-      final current = _emis[index];
-      if (current.monthsPaid < current.totalMonths) {
-        final updated = current.copyWith(
-          monthsPaid: current.monthsPaid + 1,
-          nextPaymentDate: DateTime(
-            current.nextPaymentDate.year,
-            current.nextPaymentDate.month + 1,
-            current.nextPaymentDate.day,
-          ),
-        );
-        await _firestoreService.saveEmi(updated);
-      }
-    }
+  Future<void> payEmi(EmiModel emi, AccountModel? account) async {
+    await _firestoreService.payEmiAndUpdateBalance(emi, account);
   }
 
   Future<void> deleteEmi(String id) async {

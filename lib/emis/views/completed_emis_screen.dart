@@ -1,7 +1,8 @@
-import 'package:expensetracker/homescreen/models/emi_model.dart';
+import 'package:mtracker/homescreen/models/emi_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../root/utils/currency_util.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../controllers/emi_controller.dart';
 
@@ -21,7 +22,8 @@ class _CompletedEmisScreenState extends State<CompletedEmisScreen> {
 
     // Filtered list
     final filteredEmis = controller.completedEmis.where((emi) {
-      if (_selectedFilter == 'Self') return emi.ownerName.toLowerCase() == 'self';
+      if (_selectedFilter == 'Self')
+        return emi.ownerName.toLowerCase() == 'self';
       if (_selectedFilter == 'Others')
         return emi.ownerName.toLowerCase() != 'self';
       return true;
@@ -114,6 +116,7 @@ class _CompletedEmisScreenState extends State<CompletedEmisScreen> {
                         return _buildCompletedCard(
                           context,
                           filteredEmis[index],
+                          controller,
                         );
                       },
                     ),
@@ -160,215 +163,239 @@ class _CompletedEmisScreenState extends State<CompletedEmisScreen> {
     );
   }
 
-  Widget _buildCompletedCard(BuildContext context, EmiModel emi) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 0,
-    );
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: AppColors.premiumCardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.greenLight.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
+  Widget _buildCompletedCard(
+    BuildContext context,
+    EmiModel emi,
+    EmiController controller,
+  ) {
+    return Dismissible(
+      key: Key(emi.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 32),
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: AppColors.redAlertText,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 32),
+      ),
+      onDismissed: (direction) {
+        controller.deleteEmi(emi.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${emi.title} deleted'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () => controller.addEmi(emi),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.all(24),
+        decoration: AppColors.premiumCardDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.greenLight.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(emi.icon, color: AppColors.greenDark, size: 24),
                 ),
-                child: Icon(emi.icon, color: AppColors.greenDark, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        emi.title,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            color: AppColors.textGray.withOpacity(0.4),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            emi.ownerName,
+                            style: TextStyle(
+                              color: emi.ownerName.toLowerCase() == 'self'
+                                  ? AppColors.primaryPurple
+                                  : AppColors.progressOrange,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.greenLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'COMPLETED',
+                    style: TextStyle(
+                      color: AppColors.greenDark,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'TOTAL SETTLED',
+                      style: TextStyle(
+                        color: AppColors.textGray,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                      emi.title,
+                      CurrencyUtil.format(emi.totalAmount),
                       style: const TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 18,
+                        color: AppColors.greenDark,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          color: AppColors.textGray.withOpacity(0.4),
-                          size: 14,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          emi.ownerName,
-                          style: TextStyle(
-                            color: emi.ownerName.toLowerCase() == 'self'
-                                ? AppColors.primaryPurple
-                                : AppColors.progressOrange,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'DURATION',
+                      style: TextStyle(
+                        color: AppColors.textGray,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${emi.totalMonths} months',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'PROGRESS',
+                  style: TextStyle(
+                    color: AppColors.textGray,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: AppColors.greenLight,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  'COMPLETED',
+                const Text(
+                  '100% PAID',
                   style: TextStyle(
                     color: AppColors.greenDark,
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'TOTAL SETTLED',
-                    style: TextStyle(
-                      color: AppColors.textGray,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    currencyFormat.format(emi.totalAmount),
-                    style: const TextStyle(
-                      color: AppColors.greenDark,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'DURATION',
-                    style: TextStyle(
-                      color: AppColors.textGray,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${emi.totalMonths} months',
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'PROGRESS',
-                style: TextStyle(
-                  color: AppColors.textGray,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const Text(
-                '100% PAID',
-                style: TextStyle(
-                  color: AppColors.greenDark,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Container(
-            height: 6,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.greenLight,
-              borderRadius: BorderRadius.circular(3),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Divider(color: AppColors.softBorder),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: AppColors.greenLight,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_outline,
-                  color: AppColors.greenDark,
-                  size: 20,
-                ),
+            const SizedBox(height: 10),
+            Container(
+              height: 6,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.greenLight,
+                borderRadius: BorderRadius.circular(3),
               ),
-              const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'STATUS',
-                    style: TextStyle(
-                      color: AppColors.textGray,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
+            ),
+            const SizedBox(height: 24),
+            Divider(color: AppColors.softBorder),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: AppColors.greenLight,
+                    shape: BoxShape.circle,
                   ),
-                  Text(
-                    'Fully Paid 🎉',
-                    style: TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: AppColors.greenDark,
+                    size: 20,
                   ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'STATUS',
+                      style: TextStyle(
+                        color: AppColors.textGray,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    Text(
+                      'Fully Paid 🎉',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:mtracker/root/utils/currency_util.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -5,8 +6,10 @@ import '../controllers/emi_controller.dart';
 import '../../accounts/controllers/accounts_controller.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../../homescreen/models/emi_model.dart';
+import '../../accounts/models/account_model.dart';
 import '../../categories/controllers/category_controller.dart';
 import '../../homescreen/models/category_model.dart';
+import '../../root/utils/app_icons.dart';
 
 class AddEmiScreen extends StatefulWidget {
   final EmiModel? emiToEdit;
@@ -23,11 +26,13 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
   final _totalAmountController = TextEditingController();
   final _durationController = TextEditingController();
   final _ownerController = TextEditingController(text: 'Self');
+  final _downpaymentController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
   String? _selectedAccountId;
   String? _selectedCategoryId;
   String _ownerType = 'Self'; // 'Self' or 'Other'
+  bool _isNewPurchase = false;
 
   @override
   void initState() {
@@ -35,8 +40,8 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
     if (widget.emiToEdit != null) {
       final emi = widget.emiToEdit!;
       _nameController.text = emi.title;
-      _monthlyController.text = emi.monthlyAmount.toStringAsFixed(0);
-      _totalAmountController.text = emi.totalAmount.toStringAsFixed(0);
+      _monthlyController.text = emi.monthlyAmount.toString();
+      _totalAmountController.text = emi.totalAmount.toString();
       _durationController.text = emi.totalMonths.toString();
       _selectedDate = emi.nextPaymentDate;
       _selectedAccountId = emi.accountId;
@@ -50,6 +55,57 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
         _ownerController.text = emi.ownerName;
       }
     }
+
+    // Add listeners for automatic calculation
+    _monthlyController.addListener(_calculateTotalAmount);
+    _durationController.addListener(_calculateTotalAmount);
+
+    // Initial account selection for downpayment
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final accountsController = context.read<AccountsController>();
+      final cashAccount = accountsController.accounts.firstWhere(
+        (a) =>
+            a.name.toLowerCase().contains('cash') ||
+            a.name.toLowerCase().contains('hand'),
+        orElse:
+            () =>
+                accountsController.accounts.isNotEmpty
+                    ? accountsController.accounts.first
+                    : AccountModel(
+                      id: '',
+                      name: '',
+                      balance: 0,
+                      iconName: '',
+                      iconColor: Colors.black,
+                      backgroundColor: Colors.white,
+                      type: AccountType.bank,
+                    ),
+      );
+
+      if (cashAccount.id.isNotEmpty) {
+        setState(() {
+          // No longer needed
+        });
+      }
+    });
+  }
+
+  void _calculateTotalAmount() {
+    final monthly = double.tryParse(_monthlyController.text) ?? 0.0;
+    final duration = int.tryParse(_durationController.text) ?? 0;
+
+    if (monthly > 0 && duration > 0) {
+      final total = monthly * duration;
+      // Use text formatting to avoid issues with trailing zeros
+      final totalStr = total == total.toInt()
+          ? total.toInt().toString()
+          : total.toStringAsFixed(1);
+
+      // Update the totalAmountController without triggering its own listener if it had one
+      if (_totalAmountController.text != totalStr) {
+        _totalAmountController.text = totalStr;
+      }
+    }
   }
 
   @override
@@ -59,6 +115,7 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
     _totalAmountController.dispose();
     _durationController.dispose();
     _ownerController.dispose();
+    _downpaymentController.dispose();
     super.dispose();
   }
 
@@ -66,7 +123,7 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now(),
+      firstDate: DateTime(2020),
       lastDate: DateTime(2035),
       builder: (context, child) {
         return Theme(
@@ -141,6 +198,29 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildLabel('LOAN TYPE'),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTypeChip(
+                              'Existing Loan',
+                              !_isNewPurchase,
+                              () => setState(() => _isNewPurchase = false),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTypeChip(
+                              'New Purchase',
+                              _isNewPurchase,
+                              () => setState(() => _isNewPurchase = true),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
                       _buildLabel('EMI NAME'),
                       const SizedBox(height: 12),
                       _buildTextField(_nameController, hint: 'e.g. Car Loan'),
@@ -369,11 +449,11 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('TOTAL LOAN AMOUNT'),
+                                _buildLabel('TOTAL DURATION (MONTHS)'),
                                 const SizedBox(height: 12),
                                 _buildTextField(
-                                  _totalAmountController,
-                                  hint: '₹ 0',
+                                  _durationController,
+                                  hint: 'e.g. 48',
                                   isNumber: true,
                                 ),
                               ],
@@ -384,13 +464,29 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
 
                       const SizedBox(height: 24),
 
-                      _buildLabel('TOTAL DURATION (MONTHS)'),
+                      _buildLabel('TOTAL LOAN AMOUNT'),
                       const SizedBox(height: 12),
                       _buildTextField(
-                        _durationController,
-                        hint: 'e.g. 48',
+                        _totalAmountController,
+                        hint: '₹ 0',
                         isNumber: true,
                       ),
+
+                      if (_isNewPurchase) ...[
+                        const SizedBox(height: 24),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('DOWNPAYMENT (OPTIONAL)'),
+                            const SizedBox(height: 12),
+                            _buildTextField(
+                              _downpaymentController,
+                              hint: '₹ 0',
+                              isNumber: true,
+                            ),
+                          ],
+                        ),
+                      ],
 
                       const SizedBox(height: 24),
 
@@ -442,18 +538,19 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
                                 _monthlyController.text.isEmpty)
                               return;
 
-                            final categoryController =
-                                context.read<CategoryController>();
-                            final selectedCategory =
-                                _selectedCategoryId != null
-                                    ? categoryController.categories.firstWhere(
-                                      (cat) => cat.id == _selectedCategoryId,
-                                    )
-                                    : null;
+                            final categoryController = context
+                                .read<CategoryController>();
+                            final selectedCategory = _selectedCategoryId != null
+                                ? categoryController.categories.firstWhere(
+                                    (cat) => cat.id == _selectedCategoryId,
+                                  )
+                                : null;
 
                             final newEmi = EmiModel(
-                              id: widget.emiToEdit?.id ??
-                                  DateTime.now().millisecondsSinceEpoch.toString(),
+                              id:
+                                  widget.emiToEdit?.id ??
+                                  DateTime.now().millisecondsSinceEpoch
+                                      .toString(),
                               title: _nameController.text,
                               ownerName: _ownerController.text.isEmpty
                                   ? 'Self'
@@ -472,13 +569,20 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
                                   int.tryParse(_durationController.text) ?? 0,
                               monthsPaid: widget.emiToEdit?.monthsPaid ?? 0,
                               nextPaymentDate: _selectedDate,
-                              icon: selectedCategory?.icon ??
-                                  widget.emiToEdit?.icon ??
-                                  Icons.pie_chart_outline,
-                              color: selectedCategory?.iconColor ??
+                              iconName:
+                                  selectedCategory?.iconName ??
+                                  widget.emiToEdit?.iconName ??
+                                  AppIcons.piechart,
+                              color:
+                                  selectedCategory?.iconColor ??
                                   widget.emiToEdit?.color ??
                                   AppColors.primaryPurple,
-                            );
+                                downpayment:
+                                    double.tryParse(_downpaymentController.text) ??
+                                    0.0,
+                                isNewPurchase: _isNewPurchase,
+                                downpaymentAccountId: null,
+                              );
 
                             if (widget.emiToEdit != null) {
                               context.read<EmiController>().updateEmi(newEmi);
@@ -503,7 +607,9 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primaryPurple.withOpacity(0.3),
+                                  color: AppColors.primaryPurple.withOpacity(
+                                    0.3,
+                                  ),
                                   blurRadius: 15,
                                   offset: const Offset(0, 8),
                                 ),
@@ -571,7 +677,9 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
       ),
       child: TextField(
         controller: controller,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        keyboardType: isNumber
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
         style: const TextStyle(
           color: AppColors.textDark,
           fontSize: 14,
@@ -586,6 +694,42 @@ class _AddEmiScreenState extends State<AddEmiScreen> {
           ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeChip(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryPurple : AppColors.background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryPurple : AppColors.softBorder,
+          ),
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: AppColors.primaryPurple.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                  : [],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppColors.textLight : AppColors.textGray,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

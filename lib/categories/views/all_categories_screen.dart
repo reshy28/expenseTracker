@@ -132,9 +132,12 @@ class AllCategoriesScreen extends StatelessWidget {
                           const SizedBox(height: 12),
                           Text(
                             category.name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.textDark,
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

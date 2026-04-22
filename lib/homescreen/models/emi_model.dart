@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../root/utils/app_icons.dart';
 
 class EmiModel {
   final String id;
@@ -8,11 +9,14 @@ class EmiModel {
   final int totalMonths;
   final int monthsPaid;
   final DateTime nextPaymentDate;
-  final IconData icon;
+  final String iconName;
   final Color color;
   final String ownerName; // Who this EMI is for (Self, Friend Name, etc.)
   final String? accountId; // Linked account for payments
   final String? categoryId; // Linked category
+  final double downpayment;
+  final bool isNewPurchase;
+  final String? downpaymentAccountId;
 
   EmiModel({
     required this.id,
@@ -22,12 +26,18 @@ class EmiModel {
     required this.totalMonths,
     required this.monthsPaid,
     required this.nextPaymentDate,
-    required this.icon,
+    required this.iconName,
     required this.color,
     this.ownerName = 'Self',
     this.accountId,
     this.categoryId,
+    this.downpayment = 0.0,
+    this.isNewPurchase = false,
+    this.downpaymentAccountId,
   });
+
+  /// Reconstruct IconData at runtime (safe for tree shaking)
+  IconData get icon => AppIcons.get(iconName);
 
   Map<String, dynamic> toMap() {
     return {
@@ -38,11 +48,14 @@ class EmiModel {
       'totalMonths': totalMonths,
       'monthsPaid': monthsPaid,
       'nextPaymentDate': nextPaymentDate.toIso8601String(),
-      'iconCode': icon.codePoint,
+      'iconName': iconName,
       'color': color.value,
       'ownerName': ownerName,
       'accountId': accountId,
       'categoryId': categoryId,
+      'downpayment': downpayment,
+      'isNewPurchase': isNewPurchase,
+      'downpaymentAccountId': downpaymentAccountId,
     };
   }
 
@@ -56,17 +69,31 @@ class EmiModel {
       monthsPaid: map['monthsPaid'] ?? 0,
       nextPaymentDate: DateTime.parse(
           map['nextPaymentDate'] ?? DateTime.now().toIso8601String()),
-      icon: IconData(map['iconCode'] ?? 0xe0b0, fontFamily: 'MaterialIcons'),
+      iconName: map['iconName'] ?? map['iconCode']?.toString() ?? 'pie_chart',
       color: Color(map['color'] ?? 0xFF000000),
       ownerName: map['ownerName'] ?? 'Self',
       accountId: map['accountId'],
       categoryId: map['categoryId'],
+      downpayment: (map['downpayment'] ?? 0.0).toDouble(),
+      isNewPurchase: map['isNewPurchase'] ?? false,
+      downpaymentAccountId: map['downpaymentAccountId'],
     );
   }
 
   double get percentagePaid => monthsPaid / totalMonths;
   double get amountLeft => totalAmount - (monthlyAmount * monthsPaid);
   int get monthsLeft => totalMonths - monthsPaid;
+
+  DateTime get endDate {
+    if (monthsLeft > 0) {
+      return DateTime(
+        nextPaymentDate.year,
+        nextPaymentDate.month + (monthsLeft - 1),
+        nextPaymentDate.day,
+      );
+    }
+    return nextPaymentDate;
+  }
 
   EmiModel copyWith({
     String? id,
@@ -76,11 +103,14 @@ class EmiModel {
     int? totalMonths,
     int? monthsPaid,
     DateTime? nextPaymentDate,
-    IconData? icon,
+    String? iconName,
     Color? color,
     String? ownerName,
     String? accountId,
     String? categoryId,
+    double? downpayment,
+    bool? isNewPurchase,
+    String? downpaymentAccountId,
   }) {
     return EmiModel(
       id: id ?? this.id,
@@ -90,11 +120,14 @@ class EmiModel {
       totalMonths: totalMonths ?? this.totalMonths,
       monthsPaid: monthsPaid ?? this.monthsPaid,
       nextPaymentDate: nextPaymentDate ?? this.nextPaymentDate,
-      icon: icon ?? this.icon,
+      iconName: iconName ?? this.iconName,
       color: color ?? this.color,
       ownerName: ownerName ?? this.ownerName,
       accountId: accountId ?? this.accountId,
       categoryId: categoryId ?? this.categoryId,
+      downpayment: downpayment ?? this.downpayment,
+      isNewPurchase: isNewPurchase ?? this.isNewPurchase,
+      downpaymentAccountId: downpaymentAccountId ?? this.downpaymentAccountId,
     );
   }
 }
