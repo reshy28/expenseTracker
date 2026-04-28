@@ -11,9 +11,9 @@ class EmiModel {
   final DateTime nextPaymentDate;
   final String iconName;
   final Color color;
-  final String ownerName; // Who this EMI is for (Self, Friend Name, etc.)
-  final String? accountId; // Linked account for payments
-  final String? categoryId; // Linked category
+  final String ownerName;
+  final String? accountId;
+  final String? categoryId;
   final double downpayment;
   final bool isNewPurchase;
   final String? downpaymentAccountId;
@@ -68,7 +68,8 @@ class EmiModel {
       totalMonths: map['totalMonths'] ?? 0,
       monthsPaid: map['monthsPaid'] ?? 0,
       nextPaymentDate: DateTime.parse(
-          map['nextPaymentDate'] ?? DateTime.now().toIso8601String()),
+        map['nextPaymentDate'] ?? DateTime.now().toIso8601String(),
+      ),
       iconName: map['iconName'] ?? map['iconCode']?.toString() ?? 'pie_chart',
       color: Color(map['color'] ?? 0xFF000000),
       ownerName: map['ownerName'] ?? 'Self',

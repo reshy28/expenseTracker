@@ -6,11 +6,9 @@ import '../models/payment_models.dart';
 import '../../homescreen/views/app_colors.dart';
 import '../../homescreen/models/bill_model.dart';
 import '../../root/utils/currency_util.dart';
-import '../../root/services/notification_service.dart';
 
 class PaymentMethodsController extends ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  final NotificationService _notificationService = NotificationService();
 
   // State
   BudgetModel _budget = BudgetModel(amount: 0, accountId: null);
@@ -33,17 +31,6 @@ class PaymentMethodsController extends ChangeNotifier {
       expenses,
     ) {
       _fixedExpenses = expenses;
-
-      // Schedule notifications for all fixed expenses
-      for (var expense in expenses) {
-        _notificationService.scheduleMonthlyReminder(
-          id: expense.id.hashCode,
-          title: 'Bill Due: ${expense.name}',
-          body:
-              'Your payment of ${CurrencyUtil.format(expense.amount)} is due today.',
-          dayOfMonth: expense.dueDay,
-        );
-      }
 
       notifyListeners();
     });
@@ -149,7 +136,6 @@ class PaymentMethodsController extends ChangeNotifier {
   }
 
   Future<void> deleteFixedExpense(String id) async {
-    await _notificationService.cancelNotification(id.hashCode);
     await _firestoreService.deleteFixedExpense(id);
   }
 

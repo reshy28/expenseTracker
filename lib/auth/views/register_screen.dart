@@ -13,15 +13,15 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
 
+  final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
-
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -33,9 +33,10 @@ class _RegisterScreenState extends State<RegisterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnim = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.08),
       end: Offset.zero,
@@ -64,7 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      if (mounted) Navigator.pop(context); // Go back to login or auto-login handles it
+      if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = _mapFirebaseError(e);
@@ -118,8 +119,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppColors.softBorder),
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded,
-                            size: 18, color: AppColors.textDark),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 18,
+                          color: AppColors.textDark,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -174,8 +178,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       icon: Icons.lock_outline_rounded,
                       obscureText: _obscurePassword,
                       suffixIcon: GestureDetector(
-                        onTap: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        onTap: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                         child: Icon(
                           _obscurePassword
                               ? Icons.visibility_off_outlined
@@ -192,7 +197,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       Text(
                         _errorMessage!,
                         style: const TextStyle(
-                            color: AppColors.redAlertText, fontSize: 13),
+                          color: AppColors.redAlertText,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 40),
@@ -206,7 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           shadowColor: Colors.transparent,
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         child: Ink(
                           decoration: BoxDecoration(
@@ -219,13 +227,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     width: 22,
                                     height: 22,
                                     child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2))
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : const Text(
                                     'Create Account',
                                     style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                           ),
                         ),
@@ -235,17 +247,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Already have an account? ",
-                            style: TextStyle(
-                                color: AppColors.textGray, fontSize: 14)),
+                        const Text(
+                          "Already have an account? ",
+                          style: TextStyle(
+                            color: AppColors.textGray,
+                            fontSize: 14,
+                          ),
+                        ),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: const Text(
                             'Sign In',
                             style: TextStyle(
-                                color: AppColors.primaryPurple,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold),
+                              color: AppColors.primaryPurple,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -261,12 +278,15 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Widget _buildLabel(String text) {
-    return Text(text,
-        style: const TextStyle(
-            color: AppColors.textGray,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5));
+    return Text(
+      text,
+      style: const TextStyle(
+        color: AppColors.textGray,
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.5,
+      ),
+    );
   }
 
   Widget _buildTextField({
@@ -294,8 +314,10 @@ class _RegisterScreenState extends State<RegisterScreen>
           prefixIcon: Icon(icon, color: AppColors.textGray, size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
         ),
         validator: validator,
       ),

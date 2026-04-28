@@ -7,8 +7,6 @@ import '../controllers/payment_methods_controller.dart';
 import '../models/payment_models.dart';
 import '../../root/utils/app_icons.dart';
 
-import '../../reports/views/reports_screen.dart';
-
 class SalaryManagementScreen extends StatefulWidget {
   const SalaryManagementScreen({super.key});
 
@@ -96,7 +94,8 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
                       if (_expenseNameController.text.isNotEmpty &&
                           _expenseAmountController.text.isNotEmpty) {
                         final amount =
-                            double.tryParse(_expenseAmountController.text) ?? 0.0;
+                            double.tryParse(_expenseAmountController.text) ??
+                            0.0;
                         final expense = SalaryExpenseModel(
                           id:
                               expenseToEdit?.id ??
@@ -456,159 +455,118 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
                                     letterSpacing: 1.5,
                                   ),
                                 ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      CurrencyUtil.format(
-                                        controller.salaryAmount,
-                                      ),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                GestureDetector(
-                                  onTap: _showEditSalaryDialog,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.edit_outlined,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  CurrencyUtil.format(controller.salaryAmount),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
-                            const Divider(color: Colors.white24),
-                            const SizedBox(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'REMAINING BALANCE',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      CurrencyUtil.format(
-                                        controller.remainingSalaryBalance,
-                                      ),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                            GestureDetector(
+                              onTap: _showEditSalaryDialog,
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '${controller.salaryAmount > 0 ? ((controller.remainingSalaryBalance / controller.salaryAmount) * 100).toInt() : 0}% LEFT',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                child: const Icon(
+                                  Icons.edit_outlined,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Fixed Expenses Section
-                      _buildSectionHeader(
-                        'FIXED EXPENSES',
-                        controller.fixedExpenses
-                            .where(
-                              (e) => controller.salaryFixedExpenseIds.contains(
-                                e.id,
-                              ),
-                            )
-                            .length,
-                        onAdd: () =>
-                            _showFixedExpenseSelectionSheet(controller),
-                      ),
-                      const SizedBox(height: 16),
-                      if (controller.salaryFixedExpenseIds.isEmpty)
-                        _buildEmptyState('No fixed expenses selected.')
-                      else
-                        ...controller.fixedExpenses
-                            .where(
-                              (e) => controller.salaryFixedExpenseIds.contains(
-                                e.id,
-                              ),
-                            )
-                            .map(
-                              (expense) => Dismissible(
-                                key: Key('fixed_${expense.id}'),
-                                direction: DismissDirection.endToStart,
-                                background: _buildDismissBackground(
-                                  Icons.link_off,
+                        const SizedBox(height: 24),
+                        const Divider(color: Colors.white24),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'REMAINING BALANCE',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
                                 ),
-                                onDismissed: (_) {
-                                  controller.toggleFixedExpenseInSalary(
-                                    expense.id,
-                                  );
-                                },
-                                child: _buildExpenseTile(
-                                  title: expense.name,
-                                  amount: expense.amount,
-                                  icon: expense.icon,
-                                  bgColor: expense.backgroundColor,
-                                  iconColor: expense.iconColor,
-                                  date: 'Due on day ${expense.dueDay}',
+                                const SizedBox(height: 8),
+                                Text(
+                                  CurrencyUtil.format(
+                                    controller.remainingSalaryBalance,
+                                  ),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${controller.salaryAmount > 0 ? ((controller.remainingSalaryBalance / controller.salaryAmount) * 100).toInt() : 0}% LEFT',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
 
-                      const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                      // Additional Expenses Section
-                      _buildSectionHeader(
-                        'OTHER EXPENSES',
-                        controller.additionalSalaryExpenses.length,
-                      ),
-                      const SizedBox(height: 16),
-                      if (controller.additionalSalaryExpenses.isEmpty)
-                        _buildEmptyState('No additional expenses added yet.')
-                      else
-                        ...controller.additionalSalaryExpenses.map(
+                  // Fixed Expenses Section
+                  _buildSectionHeader(
+                    'FIXED EXPENSES',
+                    controller.fixedExpenses
+                        .where(
+                          (e) =>
+                              controller.salaryFixedExpenseIds.contains(e.id),
+                        )
+                        .length,
+                    onAdd: () => _showFixedExpenseSelectionSheet(controller),
+                  ),
+                  const SizedBox(height: 16),
+                  if (controller.salaryFixedExpenseIds.isEmpty)
+                    _buildEmptyState('No fixed expenses selected.')
+                  else
+                    ...controller.fixedExpenses
+                        .where(
+                          (e) =>
+                              controller.salaryFixedExpenseIds.contains(e.id),
+                        )
+                        .map(
                           (expense) => Dismissible(
-                            key: Key('other_${expense.id}'),
+                            key: Key('fixed_${expense.id}'),
                             direction: DismissDirection.endToStart,
-                            background: _buildDismissBackground(
-                              Icons.delete_outline,
-                            ),
+                            background: _buildDismissBackground(Icons.link_off),
                             onDismissed: (_) {
-                              controller.deleteSalaryExpense(expense.id);
+                              controller.toggleFixedExpenseInSalary(expense.id);
                             },
                             child: _buildExpenseTile(
                               title: expense.name,
@@ -616,18 +574,50 @@ class _SalaryManagementScreenState extends State<SalaryManagementScreen> {
                               icon: expense.icon,
                               bgColor: expense.backgroundColor,
                               iconColor: expense.iconColor,
-                              date: DateFormat(
-                                'MMM dd, yyyy',
-                              ).format(expense.dateAdded),
-                              onEdit: () => _showAddExpenseBottomSheet(
-                                expenseToEdit: expense,
-                              ),
+                              date: 'Due on day ${expense.dueDay}',
                             ),
                           ),
                         ),
-                      const SizedBox(height: 100),
-                    ],
+
+                  const SizedBox(height: 32),
+
+                  // Additional Expenses Section
+                  _buildSectionHeader(
+                    'OTHER EXPENSES',
+                    controller.additionalSalaryExpenses.length,
                   ),
+                  const SizedBox(height: 16),
+                  if (controller.additionalSalaryExpenses.isEmpty)
+                    _buildEmptyState('No additional expenses added yet.')
+                  else
+                    ...controller.additionalSalaryExpenses.map(
+                      (expense) => Dismissible(
+                        key: Key('other_${expense.id}'),
+                        direction: DismissDirection.endToStart,
+                        background: _buildDismissBackground(
+                          Icons.delete_outline,
+                        ),
+                        onDismissed: (_) {
+                          controller.deleteSalaryExpense(expense.id);
+                        },
+                        child: _buildExpenseTile(
+                          title: expense.name,
+                          amount: expense.amount,
+                          icon: expense.icon,
+                          bgColor: expense.backgroundColor,
+                          iconColor: expense.iconColor,
+                          date: DateFormat(
+                            'MMM dd, yyyy',
+                          ).format(expense.dateAdded),
+                          onEdit: () => _showAddExpenseBottomSheet(
+                            expenseToEdit: expense,
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 100),
+                ],
+              ),
             ),
           ],
         ),

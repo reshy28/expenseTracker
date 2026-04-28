@@ -16,7 +16,6 @@ class CategoryModel {
     required this.iconColor,
   });
 
-  /// Reconstruct IconData at runtime (safe for tree shaking)
   IconData get icon => AppIcons.get(iconName);
 
   Map<String, dynamic> toMap() {
@@ -39,4 +38,3 @@ class CategoryModel {
     );
   }
 }
-

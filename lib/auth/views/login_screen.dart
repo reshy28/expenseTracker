@@ -33,9 +33,10 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnim = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.08),
       end: Offset.zero,
@@ -106,7 +107,6 @@ class _LoginScreenState extends State<LoginScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 40),
-
                     // Logo / Brand
                     Container(
                       width: 56,
@@ -121,9 +121,7 @@ class _LoginScreenState extends State<LoginScreen>
                         size: 28,
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
                     const Text(
                       'Welcome back',
                       style: TextStyle(
@@ -142,9 +140,7 @@ class _LoginScreenState extends State<LoginScreen>
                         height: 1.5,
                       ),
                     ),
-
                     const SizedBox(height: 48),
-
                     // Email field
                     _buildLabel('EMAIL'),
                     const SizedBox(height: 8),
@@ -161,9 +157,7 @@ class _LoginScreenState extends State<LoginScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
                     // Password field
                     _buildLabel('PASSWORD'),
                     const SizedBox(height: 8),
@@ -173,8 +167,9 @@ class _LoginScreenState extends State<LoginScreen>
                       icon: Icons.lock_outline_rounded,
                       obscureText: _obscurePassword,
                       suffixIcon: GestureDetector(
-                        onTap: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        onTap: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                         child: Icon(
                           _obscurePassword
                               ? Icons.visibility_off_outlined
@@ -184,25 +179,30 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Password is required';
+                        if (v == null || v.isEmpty)
+                          return 'Password is required';
                         return null;
                       },
                     ),
-
                     // Error message
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.redAlertText.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline,
-                                color: AppColors.redAlertText, size: 18),
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppColors.redAlertText,
+                              size: 18,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -217,9 +217,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 36),
-
                     // Login button
                     SizedBox(
                       width: double.infinity,
@@ -240,8 +238,9 @@ class _LoginScreenState extends State<LoginScreen>
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    AppColors.primaryPurple.withOpacity(0.35),
+                                color: AppColors.primaryPurple.withOpacity(
+                                  0.35,
+                                ),
                                 blurRadius: 16,
                                 offset: const Offset(0, 6),
                               ),
@@ -270,9 +269,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 28),
-
                     // Register link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -366,8 +363,10 @@ class _LoginScreenState extends State<LoginScreen>
                 )
               : null,
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
         ),
         validator: validator,
       ),

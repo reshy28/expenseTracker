@@ -15,17 +15,11 @@ import 'categories/controllers/category_controller.dart';
 import 'emis/controllers/emi_controller.dart';
 import 'settings/controllers/payment_methods_controller.dart';
 import 'settings/controllers/profile_controller.dart';
-
-// Services
-
-import 'root/services/notification_service.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Essential initialization
   await Firebase.initializeApp();
-  
-  // Initialize Notifications
-  await NotificationService().init();
 
   runApp(const MyApp());
 }

@@ -24,7 +24,6 @@ class TransactionsController extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    // Artificial delay to show the indicator
     await Future.delayed(const Duration(seconds: 1));
     _init();
   }

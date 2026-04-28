@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../homescreen/models/transaction_model.dart';
-import '../../../homescreen/controllers/home_controller.dart';
 import '../../../homescreen/views/app_colors.dart';
 import '../../../root/utils/currency_util.dart';
 import '../../../accounts/controllers/accounts_controller.dart';
@@ -121,7 +121,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                         onTap: () => Navigator.pop(context),
                         child: Icon(
                           Icons.close,
-                          color: AppColors.textGray.withOpacity(0.5),
+                          color: AppColors.textGray.withValues(alpha: 0.5),
                           size: 20,
                         ),
                       ),
@@ -353,7 +353,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 22, color: AppColors.textGray.withOpacity(0.4)),
+        Icon(icon, size: 22, color: AppColors.textGray.withValues(alpha: 0.4)),
         const SizedBox(width: 16),
         Expanded(
           child: TextField(
@@ -366,7 +366,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
-                color: AppColors.textGray.withOpacity(0.3),
+                color: AppColors.textGray.withValues(alpha: 0.3),
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -401,7 +401,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
             child: Icon(
               icon,
               size: 20,
-              color: iconColor ?? AppColors.textGray.withOpacity(0.6),
+              color: iconColor ?? AppColors.textGray.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(width: 16),
@@ -418,13 +418,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
           Icon(
             Icons.chevron_right,
             size: 18,
-            color: AppColors.textGray.withOpacity(0.3),
+            color: AppColors.textGray.withValues(alpha: 0.3),
           ),
         ],
       ),
     );
   }
 
+  //category picker function
   void _showCategoryPicker(
     BuildContext context,
     CategoryController controller,

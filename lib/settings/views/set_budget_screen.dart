@@ -441,8 +441,8 @@ class _SetBudgetScreenState extends State<SetBudgetScreen> {
                                   Text(
                                     '${CurrencyUtil.format(account.balance)} available',
                                     style: TextStyle(
-                                      color: AppColors.textGray.withOpacity(
-                                        0.6,
+                                      color: AppColors.textGray.withValues(
+                                        alpha: 0.6,
                                       ),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,

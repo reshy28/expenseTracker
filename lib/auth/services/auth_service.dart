@@ -20,19 +20,15 @@ class AuthService {
       email: email,
       password: password,
     );
-    
+
     // 1. Update Auth display name
     await credential.user?.updateDisplayName(name);
 
     // 2. Create initial Profile document in Firestore so controllers can see it
     if (credential.user != null) {
-      final user = UserModel(
-        name: name,
-        email: email,
-      );
+      final user = UserModel(name: name, email: email);
       await FirestoreService().saveProfile(user);
     }
-
     return credential;
   }
 
@@ -41,10 +37,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    return _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
   /// Sign out

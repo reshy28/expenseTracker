@@ -5,9 +5,7 @@ import '../app_colors.dart';
 
 class UpcomingBills extends StatelessWidget {
   final List<BillModel> bills;
-
   const UpcomingBills({super.key, required this.bills});
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -69,14 +67,14 @@ class UpcomingBills extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.calendar_today_outlined,
-                            color: AppColors.textGray.withOpacity(0.6),
+                            color: AppColors.textGray.withValues(alpha: 0.6),
                             size: 14,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             bill.dueDate,
                             style: TextStyle(
-                              color: AppColors.textGray.withOpacity(0.8),
+                              color: AppColors.textGray.withValues(alpha: 0.8),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -107,8 +105,8 @@ class UpcomingBills extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: bill.dueInDays.toLowerCase() == 'due today'
-                            ? AppColors.redAlertText.withOpacity(0.08)
-                            : AppColors.orangeAlertText.withOpacity(0.08),
+                            ? AppColors.redAlertText.withValues(alpha: 0.08)
+                            : AppColors.orangeAlertText.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

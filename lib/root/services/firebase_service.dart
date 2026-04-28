@@ -72,6 +72,7 @@ class FirestoreService {
         }
       }
     }
+
     // Finally delete the user root document if we have space in batch,
     // or start a fresh one.
     if (opCount >= 450) {
